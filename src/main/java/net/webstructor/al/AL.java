@@ -88,6 +88,7 @@ public class AL {
 	public final static String image 	= "image";
 	public final static String path 	= "path";
 	public final static String text 	= "text"; // TODO: move this out to name?
+	public final static String summary = "summary";
 	public final static String version  = "version";
 	public final static String format   = "format";
 	public final static String context  = "context";

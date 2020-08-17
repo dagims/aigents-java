@@ -38,7 +38,7 @@ public class XNDFarm extends Farm {
     public XNDFarm(String[] args) {
     	super(args,
     			true,//enable logger
-    			false,//enable console!!!
+		        true,//enable console!!!
     			true,true,true,//enable email, http, telnet
     			true,//enable social networking!
     			Conversationer.WORKERS);//set greater number for multiple user sessions

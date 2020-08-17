@@ -23,6 +23,8 @@
  */
 package net.webstructor.xnd;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -39,11 +41,64 @@ import net.webstructor.data.ContentLocator;
 import net.webstructor.self.Matcher;
 import net.webstructor.util.MapMap;
 import net.webstructor.util.Str;
+import net.webstructor.xnd.XNDArxivPlugin;
+
+import com.kohlschutter.boilerpipe.BoilerpipeProcessingException;
+import com.kohlschutter.boilerpipe.extractors.*;
+
+//import com.sree.textbytes.readabilityBUNDLE.Article;
+//import com.sree.textbytes.readabilityBUNDLE.ContentExtractor;
+
+import com.hankcs.textrank.TextRankSummary;
 
 public class XNDMatcher extends Matcher{
+
+	XNDArxivPlugin xndArxiv;
+
 	public XNDMatcher(Body body) {
-		super(body);	
+		super(body);
+		xndArxiv = new XNDArxivPlugin(body);
 	}
+
+
+	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException
+	{
+		System.out.println("URL: " + url);
+		String ex_t = ArticleExtractor.INSTANCE.getText(html);
+		long st_time = System.nanoTime();
+		System.out.println("EXTRACTED CONTENT ------> " + ex_t);
+		long duration = System.nanoTime() - st_time;
+		System.out.println("TIME TAKEN: " + duration);
+		System.out.println("SUMMARY: ");
+		st_time = System.nanoTime();
+		String summary = "";
+		if (ex_t.length() > 2000)
+			for (String s : TextRankSummary.getTopSentenceList(ex_t, 10))
+				summary += s;
+		System.out.println(summary);
+		duration = System.nanoTime() - st_time;
+		System.out.println("TIME TAKEN FOR SUMMARY: " + duration + "\n\n");
+		return summary;
+//		st_time = System.nanoTime();
+//		Article a = new Article();
+//		ContentExtractor ce = new ContentExtractor();
+//		a = ce.extractContent(html, "ReadabilitySnack");
+//		duration = System.nanoTime() - st_time;
+//		System.out.println("READABILITYSNACK EXTRACTION: -> " + a.getCleanedArticleText());
+//		System.out.println("TIME TAKEN: "+duration+"\n\n");
+//
+//		a = ce.extractContent(html, "ReadabilityCore");
+//		duration = System.nanoTime() - st_time;
+//		System.out.println("READABILITYCORE EXTRACTION: -> " + a.getCleanedArticleText());
+//		System.out.println("TIME TAKEN: "+duration+"\n\n");
+//
+//		a = ce.extractContent(html, "ReadabilityGoose");
+//		duration = System.nanoTime() - st_time;
+//		System.out.println("READABILITYGOOSE EXTRACTION: -> " + a.getCleanedArticleText());
+//		System.out.println("TIME TAKEN: "+duration+"\n\n");
+
+	}
+
 
 	@Override
 	//match one Pattern for one Thing for one Site
@@ -68,13 +123,35 @@ public class XNDMatcher extends Matcher{
 			//TODO if matched, get the "longer" source path!!!???
 			if (thingTexts != null && thingTexts.getObject(thing, nl_text, false) != null)//already adding this
 				continue;
- 
+
 			instance.addThing(AL.is, thing);
-			instance.set(AL.times, now);
-			instance.setString(AL.text,nl_text);
+
+
 			Integer textPos = positions == null ? new Integer(0) : (Integer)positions.get(iter.cur() - 1);
 			//try to get title from the structure or generate it from the text
-			String title_text = extractTitle(body.filecacher.checkCachedRaw(path));
+			String title_text = "";
+
+
+			if(path.contains("arxiv.org")) {
+				xndArxiv.processArticle(path);
+				title_text = xndArxiv.getArxivTitle();
+				instance.set(AL.times, xndArxiv.getArxivDate());
+				instance.setString(AL.summary, xndArxiv.getArxivAbstract());
+			}
+			else {
+				title_text = extractTitle(body.filecacher.checkCachedRaw(path));
+				instance.set(AL.times, now);
+				try {
+					instance.setString(AL.summary, summarize_article(path, body.filecacher.checkCachedRaw(path)));
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
+				} catch (BoilerpipeProcessingException e) {
+					e.printStackTrace();
+				}
+			}
+
+			instance.setString(AL.text,nl_text);
+
 			if (!AL.empty(title_text))
 				instance.setString(AL.title,title_text);
 			else
@@ -84,6 +161,7 @@ public class XNDMatcher extends Matcher{
 				if (!AL.empty(image))
 					instance.setString(AL.image,image);
 			}
+
 			String link = null;
 			if (linker != null){
 				//measure link pos as link_pos = (link_beg+link_end)/2
@@ -92,11 +170,12 @@ public class XNDMatcher extends Matcher{
 				int text_pos = textPos.intValue() - range;//compute position of text as its middle
 				link = linker.getAvailableInRange(path,new Integer(text_pos),range);
 			}
+
 			if (thingTexts != null)
 				thingTexts.putObject(thing, nl_text, instance);
 			if (thingPaths != null)
 				thingPaths.putObjects(thing, path == null ? "" : path, instance);
-			
+
 			matches++;
 		}
 		return matches;
@@ -110,7 +189,20 @@ public class XNDMatcher extends Matcher{
 		//ArrayList positions = new ArrayList();
 		//Iter iter = new Iter(Parser.parse(text,positions));//build with original text positions preserved for image matching
 		int matches = 0;
-		boolean is_article = isMeta(body.filecacher.checkCachedRaw(path), "og:type", "article");
+		String summary = "";
+		try {
+			summary = summarize_article(path, body.filecacher.checkCachedRaw(path));
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (BoilerpipeProcessingException e) {
+			e.printStackTrace();
+		}
+
+		long st_time = System.nanoTime();
+		boolean is_article = path != null && (path.contains("arxiv.org/abs") || path.contains("arxiv.org/pdf") || !summary.equalsIgnoreCase("") || isMeta(body.filecacher.checkCachedRaw(path), "og:type", "article"));
+		long duration = System.nanoTime() - st_time;
+		System.out.println("TIME TAKEN: " + duration);
+		//path = "https://arxiv.org/pdf/1810.11383.pdf";
 		System.out.println("IS ->" + path + "<- ARTICLE? => " + is_article);
 		if (!is_article)
 			return 0;
@@ -129,7 +221,8 @@ public class XNDMatcher extends Matcher{
 		}
 		return matches;
 	}
-	
+
+
 	static boolean isMeta(String source, String property, String content) {
     	String ptoken = "property=\"";
         String ctoken = "content=\"";
@@ -205,9 +298,9 @@ public class XNDMatcher extends Matcher{
         return tagCont;
     }
 
-    static ArrayList<String> getMetaContByProp(String source, String property) {
+    static ArrayList<String> getMetaContByProp(String source, String property, boolean prop) {
         ArrayList<String> mCont = new ArrayList<String>();
-        String ptoken = "property=\"";
+        String ptoken = prop ? "property=\"" : "name=\"";
         String ctoken = "content=\"";
         int mbpos = source.indexOf("<meta");
         int mepos = source.indexOf(">", mbpos);
@@ -237,7 +330,7 @@ public class XNDMatcher extends Matcher{
         StringBuilder sb = new StringBuilder();
         ArrayList<String> tTagC = getTagContent(source, "title");
         ArrayList<String> hTagC = getTagContent(source, "h[1-6]");
-        ArrayList<String> mTitle = getMetaContByProp(source, "og:title");
+        ArrayList<String> mTitle = getMetaContByProp(source, "og:title", true);
         String tit = "" , htit = "", mtit = "";
         if (mTitle.size() != 0)
             mtit = mTitle.get(0);
