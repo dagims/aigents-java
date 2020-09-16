@@ -27,8 +27,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
+
+import org.xml.sax.SAXException;
 
 import net.webstructor.agent.Body;
 import net.webstructor.al.AL;
@@ -43,11 +47,18 @@ import net.webstructor.util.MapMap;
 import net.webstructor.util.Str;
 import net.webstructor.xnd.XNDArxivPlugin;
 
+import com.kohlschutter.boilerpipe.BoilerpipeExtractor;
 import com.kohlschutter.boilerpipe.BoilerpipeProcessingException;
+import com.kohlschutter.boilerpipe.document.Image;
+import com.kohlschutter.boilerpipe.document.TextDocument;
 import com.kohlschutter.boilerpipe.extractors.*;
+import com.kohlschutter.boilerpipe.sax.BoilerpipeSAXInput;
+import com.kohlschutter.boilerpipe.sax.HTMLDocument;
+import com.kohlschutter.boilerpipe.sax.ImageExtractor;
+import com.kohlschutter.boilerpipe.sax.BoilerpipeHTMLParser;
 
-//import com.sree.textbytes.readabilityBUNDLE.Article;
-//import com.sree.textbytes.readabilityBUNDLE.ContentExtractor;
+import com.sree.textbytes.readabilityBUNDLE.Article;
+import com.sree.textbytes.readabilityBUNDLE.ContentExtractor;
 
 import com.hankcs.textrank.TextRankSummary;
 
@@ -61,42 +72,20 @@ public class XNDMatcher extends Matcher{
 	}
 
 
-	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException
+	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException, SAXException
 	{
-		System.out.println("URL: " + url);
-		String ex_t = ArticleExtractor.INSTANCE.getText(html);
+		BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
+		String ex_t = extractor.getText(html);
+		
 		long st_time = System.nanoTime();
-		System.out.println("EXTRACTED CONTENT ------> " + ex_t);
 		long duration = System.nanoTime() - st_time;
-		System.out.println("TIME TAKEN: " + duration);
-		System.out.println("SUMMARY: ");
 		st_time = System.nanoTime();
 		String summary = "";
 		if (ex_t.length() > 2000)
 			for (String s : TextRankSummary.getTopSentenceList(ex_t, 10))
 				summary += s;
-		System.out.println(summary);
 		duration = System.nanoTime() - st_time;
-		System.out.println("TIME TAKEN FOR SUMMARY: " + duration + "\n\n");
 		return summary;
-//		st_time = System.nanoTime();
-//		Article a = new Article();
-//		ContentExtractor ce = new ContentExtractor();
-//		a = ce.extractContent(html, "ReadabilitySnack");
-//		duration = System.nanoTime() - st_time;
-//		System.out.println("READABILITYSNACK EXTRACTION: -> " + a.getCleanedArticleText());
-//		System.out.println("TIME TAKEN: "+duration+"\n\n");
-//
-//		a = ce.extractContent(html, "ReadabilityCore");
-//		duration = System.nanoTime() - st_time;
-//		System.out.println("READABILITYCORE EXTRACTION: -> " + a.getCleanedArticleText());
-//		System.out.println("TIME TAKEN: "+duration+"\n\n");
-//
-//		a = ce.extractContent(html, "ReadabilityGoose");
-//		duration = System.nanoTime() - st_time;
-//		System.out.println("READABILITYGOOSE EXTRACTION: -> " + a.getCleanedArticleText());
-//		System.out.println("TIME TAKEN: "+duration+"\n\n");
-
 	}
 
 
@@ -147,6 +136,8 @@ public class XNDMatcher extends Matcher{
 					e.printStackTrace();
 				} catch (BoilerpipeProcessingException e) {
 					e.printStackTrace();
+				} catch (SAXException e) {
+					e.printStackTrace();
 				}
 			}
 
@@ -196,17 +187,17 @@ public class XNDMatcher extends Matcher{
 			e.printStackTrace();
 		} catch (BoilerpipeProcessingException e) {
 			e.printStackTrace();
+		} catch (SAXException e) {
+			e.printStackTrace();
 		}
 
 		long st_time = System.nanoTime();
 		boolean is_article = path != null && (path.contains("arxiv.org/abs") || path.contains("arxiv.org/pdf") || !summary.equalsIgnoreCase("") || isMeta(body.filecacher.checkCachedRaw(path), "og:type", "article"));
 		long duration = System.nanoTime() - st_time;
-		System.out.println("TIME TAKEN: " + duration);
-		//path = "https://arxiv.org/pdf/1810.11383.pdf";
-		System.out.println("IS ->" + path + "<- ARTICLE? => " + is_article);
+
 		if (!is_article)
 			return 0;
-		
+
 		//first, try to get patterns for the thing
 		Collection patterns = (Collection)thing.get(AL.patterns);
 		
