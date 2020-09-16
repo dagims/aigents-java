@@ -51,6 +51,11 @@ import com.kohlschutter.boilerpipe.extractors.*;
 
 import com.hankcs.textrank.TextRankSummary;
 
+import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+
+
 public class XNDMatcher extends Matcher{
 
 	XNDArxivPlugin xndArxiv;
@@ -60,6 +65,34 @@ public class XNDMatcher extends Matcher{
 		xndArxiv = new XNDArxivPlugin(body);
 	}
 
+
+	public String runScript(String url) {
+		Process process;
+		try {
+			process = Runtime.getRuntime().exec(new String[]{"python2", "python/opengraph-python.py", url});
+			InputStream stdout = process.getInputStream();
+			process.waitFor();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(stdout,StandardCharsets.UTF_8));
+			BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+			// Read any errors from the attempted command
+			String s = null;
+			body.debug("Here is the standard error of the command (if any): ");
+			while ((s = stdError.readLine()) != null) {
+				body.debug(s);
+			}
+			String line;
+			try {
+				if ((line = reader.readLine()) != null) {
+					return line;
+			  	}
+			} catch (IOException e) {
+				body.debug("Exception in reading output" + e.toString());			
+			}
+		} catch (Exception e) {
+		  	body.debug("Exception Raised" + e.toString());
+		}		
+		return null;
+	}
 
 	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException
 	{
@@ -156,10 +189,19 @@ public class XNDMatcher extends Matcher{
 				instance.setString(AL.title,title_text);
 			else
 				instance.setString(AL.title, title(path, nl_text, textPos, titler));
-			if (imager != null){
-				String image = imager.getAvailable(path,textPos);
+			//get image from Opengraph, use previous Aigents fetch if it doesn't return result
+			if (imager != null) {
+				body.debug("URL PATH: " + path);				
+				String image = runScript(path);
+				body.debug("Image from OpenGraph: " + image);
+				if ((image == null) || (image == "Invalid URL")) {
+					image = imager.getAvailable(path, textPos);
+					body.debug("Image from Aigents: " + image);
+				}
 				if (!AL.empty(image))
-					instance.setString(AL.image,image);
+					instance.setString(AL.image,image);	
+			} else {
+				body.debug("Imager is null: " + path);
 			}
 
 			String link = null;
