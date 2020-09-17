@@ -23,6 +23,10 @@
  */
 package net.webstructor.xnd;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -72,8 +76,44 @@ public class XNDMatcher extends Matcher{
 	}
 
 
-	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException, SAXException
-	{
+	public String abs_summarizer(String html) throws Exception {
+		BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
+		String ex_t = extractor.getText(html);
+
+		URL url = new URL("http://127.0.0.1:12221");
+		HttpURLConnection ht_conn = (HttpURLConnection) url.openConnection();
+		ht_conn.setRequestMethod("POST");
+		StringBuilder req_body = new StringBuilder();
+		req_body.append(ex_t);
+		byte[] requestDataBytes = req_body.toString().getBytes("UTF-8");
+		ht_conn.setRequestProperty("Content-Length", String.valueOf(requestDataBytes.length));
+		ht_conn.setDoOutput(true);
+		StringBuilder resp_txt = new StringBuilder();
+		try {
+			DataOutputStream writer = new DataOutputStream(ht_conn.getOutputStream());
+			writer.write(requestDataBytes);
+			writer.flush();
+			writer.close();
+			try {
+				BufferedReader in = new BufferedReader(new InputStreamReader(ht_conn.getInputStream()));
+				String line;
+				resp_txt = new StringBuilder();
+				while ((line = in.readLine()) != null) {
+					resp_txt.append(line);
+					resp_txt.append(System.lineSeparator());
+				}
+			} catch (Exception e) {
+				System.out.println("EXCEPTION: " + e.toString());
+			}
+		} catch (Exception e) {
+			System.out.println("EXCEPTION: " + e.toString());
+		} finally {
+			ht_conn.disconnect();
+		}
+		return resp_txt.toString();
+	}
+
+	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException, SAXException {
 		BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
 		String ex_t = extractor.getText(html);
 		
@@ -131,12 +171,8 @@ public class XNDMatcher extends Matcher{
 				title_text = extractTitle(body.filecacher.checkCachedRaw(path));
 				instance.set(AL.times, now);
 				try {
-					instance.setString(AL.summary, summarize_article(path, body.filecacher.checkCachedRaw(path)));
-				} catch (MalformedURLException e) {
-					e.printStackTrace();
-				} catch (BoilerpipeProcessingException e) {
-					e.printStackTrace();
-				} catch (SAXException e) {
+					instance.setString(AL.summary, abs_summarizer(body.filecacher.checkCachedRaw(path))); //summarize_article(path, body.filecacher.checkCachedRaw(path)));
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
