@@ -38,8 +38,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import com.uwyn.jhighlight.fastutil.Arrays;
-
 import net.webstructor.al.AL;
 import net.webstructor.util.Array;
 import net.webstructor.util.Str;
@@ -201,7 +199,10 @@ import net.webstructor.util.Str;
 					// System.out.println(" Parent Node: " + p.nodeName());
 					if (block_blacklist.contains(p.nodeName())
 							|| p.attr("class").contains("header")
-							|| p.attr("class").contains("footer")) {
+							|| p.attr("class").contains("footer")
+							|| p.attr("class").contains("menu")
+							|| p.attr("class").contains("submenu")
+							|| p.attr("class").contains("nav")) {
 						if (full_link.endsWith("/"))
 							full_link = full_link.substring(0, full_link.length() - 1);
 						if (!link_blacklist.contains(full_link))

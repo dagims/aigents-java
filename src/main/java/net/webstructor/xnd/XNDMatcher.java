@@ -94,16 +94,12 @@ public class XNDMatcher extends Matcher{
 			writer.write(requestDataBytes);
 			writer.flush();
 			writer.close();
-			try {
-				BufferedReader in = new BufferedReader(new InputStreamReader(ht_conn.getInputStream()));
-				String line;
-				resp_txt = new StringBuilder();
-				while ((line = in.readLine()) != null) {
-					resp_txt.append(line);
-					resp_txt.append(System.lineSeparator());
-				}
-			} catch (Exception e) {
-				System.out.println("EXCEPTION: " + e.toString());
+			BufferedReader in = new BufferedReader(new InputStreamReader(ht_conn.getInputStream()));
+			String line;
+			resp_txt = new StringBuilder();
+			while ((line = in.readLine()) != null) {
+				resp_txt.append(line);
+				resp_txt.append(System.lineSeparator());
 			}
 		} catch (Exception e) {
 			System.out.println("EXCEPTION: " + e.toString());
@@ -171,7 +167,11 @@ public class XNDMatcher extends Matcher{
 				title_text = extractTitle(body.filecacher.checkCachedRaw(path));
 				instance.set(AL.times, now);
 				try {
-					instance.setString(AL.summary, abs_summarizer(body.filecacher.checkCachedRaw(path))); //summarize_article(path, body.filecacher.checkCachedRaw(path)));
+					String summarized_cont = "";
+					summarized_cont = abs_summarizer(body.filecacher.checkCachedRaw(path));
+					if (summarized_cont.isEmpty())
+						summarized_cont = summarize_article(path, body.filecacher.checkCachedRaw(path));
+					instance.setString(AL.summary, summarized_cont);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
