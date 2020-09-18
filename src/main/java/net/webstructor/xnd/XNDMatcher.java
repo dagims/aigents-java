@@ -80,7 +80,7 @@ public class XNDMatcher extends Matcher{
 		xndArxiv = new XNDArxivPlugin(body);
 	}
 
-  public String runScript(String url) {
+  	public String runScript(String url) {
 		Process process;
 		try {
 			process = Runtime.getRuntime().exec(new String[]{"python2", "python/opengraph_python.py", url});
@@ -145,7 +145,7 @@ public class XNDMatcher extends Matcher{
 		BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
 		String ex_t = extractor.getText(html);
 		
-    long st_time = System.nanoTime();
+    		long st_time = System.nanoTime();
 		long duration = System.nanoTime() - st_time;
 		st_time = System.nanoTime();
 		String summary = "";
