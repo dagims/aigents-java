@@ -23,12 +23,20 @@
  */
 package net.webstructor.xnd;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
+
+import org.xml.sax.SAXException;
 
 import net.webstructor.agent.Body;
 import net.webstructor.al.AL;
@@ -43,11 +51,18 @@ import net.webstructor.util.MapMap;
 import net.webstructor.util.Str;
 import net.webstructor.xnd.XNDArxivPlugin;
 
+import com.kohlschutter.boilerpipe.BoilerpipeExtractor;
 import com.kohlschutter.boilerpipe.BoilerpipeProcessingException;
+import com.kohlschutter.boilerpipe.document.Image;
+import com.kohlschutter.boilerpipe.document.TextDocument;
 import com.kohlschutter.boilerpipe.extractors.*;
+import com.kohlschutter.boilerpipe.sax.BoilerpipeSAXInput;
+import com.kohlschutter.boilerpipe.sax.HTMLDocument;
+import com.kohlschutter.boilerpipe.sax.ImageExtractor;
+import com.kohlschutter.boilerpipe.sax.BoilerpipeHTMLParser;
 
-//import com.sree.textbytes.readabilityBUNDLE.Article;
-//import com.sree.textbytes.readabilityBUNDLE.ContentExtractor;
+import com.sree.textbytes.readabilityBUNDLE.Article;
+import com.sree.textbytes.readabilityBUNDLE.ContentExtractor;
 
 import com.hankcs.textrank.TextRankSummary;
 
@@ -65,8 +80,7 @@ public class XNDMatcher extends Matcher{
 		xndArxiv = new XNDArxivPlugin(body);
 	}
 
-
-	public String runScript(String url) {
+  public String runScript(String url) {
 		Process process;
 		try {
 			process = Runtime.getRuntime().exec(new String[]{"python2", "python/opengraph_python.py", url});
@@ -93,43 +107,53 @@ public class XNDMatcher extends Matcher{
 		}		
 		return null;
 	}
+  
+	public String abs_summarizer(String html) throws Exception {
+		BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
+		String ex_t = extractor.getText(html);
 
-	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException
-	{
-		System.out.println("URL: " + url);
-		String ex_t = ArticleExtractor.INSTANCE.getText(html);
-		long st_time = System.nanoTime();
-		System.out.println("EXTRACTED CONTENT ------> " + ex_t);
+		URL url = new URL("http://127.0.0.1:12221");
+		HttpURLConnection ht_conn = (HttpURLConnection) url.openConnection();
+		ht_conn.setRequestMethod("POST");
+		StringBuilder req_body = new StringBuilder();
+		req_body.append(ex_t);
+		byte[] requestDataBytes = req_body.toString().getBytes("UTF-8");
+		ht_conn.setRequestProperty("Content-Length", String.valueOf(requestDataBytes.length));
+		ht_conn.setDoOutput(true);
+		StringBuilder resp_txt = new StringBuilder();
+		try {
+			DataOutputStream writer = new DataOutputStream(ht_conn.getOutputStream());
+			writer.write(requestDataBytes);
+			writer.flush();
+			writer.close();
+			BufferedReader in = new BufferedReader(new InputStreamReader(ht_conn.getInputStream()));
+			String line;
+			resp_txt = new StringBuilder();
+			while ((line = in.readLine()) != null) {
+				resp_txt.append(line);
+				resp_txt.append(System.lineSeparator());
+			}
+		} catch (Exception e) {
+			System.out.println("EXCEPTION: " + e.toString());
+		} finally {
+			ht_conn.disconnect();
+		}
+		return resp_txt.toString();
+	}
+
+	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException, SAXException {
+		BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
+		String ex_t = extractor.getText(html);
+		
+    long st_time = System.nanoTime();
 		long duration = System.nanoTime() - st_time;
-		System.out.println("TIME TAKEN: " + duration);
-		System.out.println("SUMMARY: ");
 		st_time = System.nanoTime();
 		String summary = "";
 		if (ex_t.length() > 2000)
 			for (String s : TextRankSummary.getTopSentenceList(ex_t, 10))
 				summary += s;
-		System.out.println(summary);
 		duration = System.nanoTime() - st_time;
-		System.out.println("TIME TAKEN FOR SUMMARY: " + duration + "\n\n");
 		return summary;
-//		st_time = System.nanoTime();
-//		Article a = new Article();
-//		ContentExtractor ce = new ContentExtractor();
-//		a = ce.extractContent(html, "ReadabilitySnack");
-//		duration = System.nanoTime() - st_time;
-//		System.out.println("READABILITYSNACK EXTRACTION: -> " + a.getCleanedArticleText());
-//		System.out.println("TIME TAKEN: "+duration+"\n\n");
-//
-//		a = ce.extractContent(html, "ReadabilityCore");
-//		duration = System.nanoTime() - st_time;
-//		System.out.println("READABILITYCORE EXTRACTION: -> " + a.getCleanedArticleText());
-//		System.out.println("TIME TAKEN: "+duration+"\n\n");
-//
-//		a = ce.extractContent(html, "ReadabilityGoose");
-//		duration = System.nanoTime() - st_time;
-//		System.out.println("READABILITYGOOSE EXTRACTION: -> " + a.getCleanedArticleText());
-//		System.out.println("TIME TAKEN: "+duration+"\n\n");
-
 	}
 
 
@@ -175,10 +199,12 @@ public class XNDMatcher extends Matcher{
 				title_text = extractTitle(body.filecacher.checkCachedRaw(path));
 				instance.set(AL.times, now);
 				try {
-					instance.setString(AL.summary, summarize_article(path, body.filecacher.checkCachedRaw(path)));
-				} catch (MalformedURLException e) {
-					e.printStackTrace();
-				} catch (BoilerpipeProcessingException e) {
+					String summarized_cont = "";
+					summarized_cont = abs_summarizer(body.filecacher.checkCachedRaw(path));
+					if (summarized_cont.isEmpty())
+						summarized_cont = summarize_article(path, body.filecacher.checkCachedRaw(path));
+					instance.setString(AL.summary, summarized_cont);
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -239,17 +265,17 @@ public class XNDMatcher extends Matcher{
 			e.printStackTrace();
 		} catch (BoilerpipeProcessingException e) {
 			e.printStackTrace();
+		} catch (SAXException e) {
+			e.printStackTrace();
 		}
 
 		long st_time = System.nanoTime();
 		boolean is_article = path != null && (path.contains("arxiv.org/abs") || path.contains("arxiv.org/pdf") || !summary.equalsIgnoreCase("") || isMeta(body.filecacher.checkCachedRaw(path), "og:type", "article"));
 		long duration = System.nanoTime() - st_time;
-		System.out.println("TIME TAKEN: " + duration);
-		//path = "https://arxiv.org/pdf/1810.11383.pdf";
-		System.out.println("IS ->" + path + "<- ARTICLE? => " + is_article);
+
 		if (!is_article)
 			return 0;
-		
+
 		//first, try to get patterns for the thing
 		Collection patterns = (Collection)thing.get(AL.patterns);
 		

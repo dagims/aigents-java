@@ -25,14 +25,23 @@ package net.webstructor.cat;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import net.webstructor.al.AL;
 import net.webstructor.util.Array;
 import net.webstructor.util.Str;
+
 
 	public class HtmlStripper
 	{
@@ -173,6 +182,36 @@ import net.webstructor.util.Str;
             if(pos == -1)
                 pos = 0;
 
+            Set<String> link_blacklist = new HashSet<String>();
+            String[] jkl = {"header", "footer"};//, "aside"};
+            List<String> block_blacklist = java.util.Arrays.asList(jkl);
+			Document jspdoc = Jsoup.parse(source);
+			Elements jsplnks = jspdoc.getElementsByTag("a");
+			String root_url = path + (path.endsWith("/") ? "" : "/");
+			for (Element jsplnk : jsplnks) {
+				String full_link = jsplnk.attr("href");
+				if (jsplnk.attr("href").startsWith("/"))
+					full_link = path + jsplnk.attr("href");
+				else if (jsplnk.attr("href").startsWith("#"))
+					full_link = root_url + jsplnk.attr("href");
+				Elements parents = jsplnk.parents();
+				for (Element p : parents) {
+					// System.out.println(" Parent Node: " + p.nodeName());
+					if (block_blacklist.contains(p.nodeName())
+							|| p.attr("class").contains("header")
+							|| p.attr("class").contains("footer")
+							|| p.attr("class").contains("menu")
+							|| p.attr("class").contains("submenu")
+							|| p.attr("class").contains("nav")) {
+						if (full_link.endsWith("/"))
+							full_link = full_link.substring(0, full_link.length() - 1);
+						if (!link_blacklist.contains(full_link))
+							link_blacklist.add(full_link);
+					}
+				}
+			}
+			link_blacklist.remove(path);
+
             startOfText = pos;
             if( source.indexOf(LT,pos) < 0 ){
             	StringBuilder decodedText = new StringBuilder();
@@ -264,11 +303,15 @@ import net.webstructor.util.Str;
 	                		//flush creation of the link
 	                		if (currentLinkUrl != null && currentLinkBuf != null && currentLinkBuf.length() > 0) {
 	                			currentLinkUrl = stripHtmlAnchor(currentLinkUrl);
-	                			if (currentLinkUrl.length() > 0 && !currentLinkUrl.startsWith("javascript:")){
-	                				String linkUrl = currentLinkUrl.trim();
-	                				links.add(new String[]{linkUrl,currentLinkBuf.toString().trim()});
-	    	                		if (linksPositions != null)
-	    	                			linksPositions.put(new Integer((currentLinkBeg + buf.length())/2), linkUrl);
+                                if (currentLinkUrl.length() > 0 && !currentLinkUrl.startsWith("javascript:")){
+	                                String linkUrl = currentLinkUrl.trim();
+	                                if (linkUrl.endsWith("/"))
+	                                	linkUrl = linkUrl.substring(0, linkUrl.length() - 1);
+	                                if (!link_blacklist.contains(linkUrl)) {
+	                                	links.add(new String[] { linkUrl, currentLinkBuf.toString().trim() });
+	                                	if (linksPositions != null)
+	                                		linksPositions.put(new Integer((currentLinkBeg + buf.length()) / 2), linkUrl);
+									}
 	                			}
 	                		}
 	                		currentLinkUrl = null;
