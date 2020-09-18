@@ -69,15 +69,15 @@ public class XNDMatcher extends Matcher{
 	public String runScript(String url) {
 		Process process;
 		try {
-			process = Runtime.getRuntime().exec(new String[]{"python2", "python/opengraph-python.py", url});
+			process = Runtime.getRuntime().exec(new String[]{"python2", "python/opengraph_python.py", url});
 			InputStream stdout = process.getInputStream();
 			process.waitFor();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stdout,StandardCharsets.UTF_8));
 			BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 			// Read any errors from the attempted command
 			String s = null;
-			body.debug("Here is the standard error of the command (if any): ");
 			while ((s = stdError.readLine()) != null) {
+				body.debug("Here is the standard error of the command (if any): ");				
 				body.debug(s);
 			}
 			String line;
@@ -193,8 +193,9 @@ public class XNDMatcher extends Matcher{
 			if (imager != null) {
 				body.debug("URL PATH: " + path);				
 				String image = runScript(path);
-				body.debug("Image from OpenGraph: " + image);
-				if ((image == null) || (image == "Invalid URL")) {
+				if (image.startsWith("http"))
+					body.debug("Image from OpenGraph: " + image);
+				else {
 					image = imager.getAvailable(path, textPos);
 					body.debug("Image from Aigents: " + image);
 				}
