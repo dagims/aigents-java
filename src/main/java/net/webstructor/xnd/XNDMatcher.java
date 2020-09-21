@@ -36,8 +36,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.xml.sax.SAXException;
-
 import net.webstructor.agent.Body;
 import net.webstructor.al.AL;
 import net.webstructor.al.Iter;
@@ -141,7 +139,7 @@ public class XNDMatcher extends Matcher{
 		return resp_txt.toString();
 	}
 
-	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException, SAXException {
+	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException {
 		BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
 		String ex_t = extractor.getText(html);
 		
@@ -199,11 +197,8 @@ public class XNDMatcher extends Matcher{
 				title_text = extractTitle(body.filecacher.checkCachedRaw(path));
 				instance.set(AL.times, now);
 				try {
-					String summarized_cont = "";
-					summarized_cont = abs_summarizer(body.filecacher.checkCachedRaw(path));
-					if (summarized_cont.isEmpty())
-						summarized_cont = summarize_article(path, body.filecacher.checkCachedRaw(path));
-					instance.setString(AL.summary, summarized_cont);
+					instance.setString(AL.abstraction, abs_summarizer(body.filecacher.checkCachedRaw(path)));
+					instance.setString(AL.summary, summarize_article(path, body.filecacher.checkCachedRaw(path)));
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -264,8 +259,6 @@ public class XNDMatcher extends Matcher{
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (BoilerpipeProcessingException e) {
-			e.printStackTrace();
-		} catch (SAXException e) {
 			e.printStackTrace();
 		}
 
