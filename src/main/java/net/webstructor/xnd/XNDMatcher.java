@@ -159,7 +159,7 @@ public class XNDMatcher extends Matcher{
         	int i=0;
         	if (ex_t.length() > 2000)
 			for (String s : ordered){
-				summary += s+"\n";
+				summary += s+"\\n";
 
         		}
 		duration = System.nanoTime() - st_time;
