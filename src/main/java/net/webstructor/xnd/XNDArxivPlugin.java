@@ -23,8 +23,10 @@
  */
 package net.webstructor.xnd;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
-import java.util.ArrayList;
 import net.webstructor.agent.Body;
 
 public class XNDArxivPlugin {
@@ -54,7 +56,6 @@ public class XNDArxivPlugin {
 			abstractURL = url.replaceFirst("arxiv.org/(pdf|ps)", "arxiv.org/abs").replace(".pdf", "");
 			extractArxivProps(body.filecacher.checkCachedRaw(abstractURL));
 		}
-
 		return isValidArxivPage;
 	}
 
@@ -65,22 +66,22 @@ public class XNDArxivPlugin {
 		paperAuthors = "";
 		paperAbstract = "";
 		paperDate = "";
-		ArrayList<String> prop = getMetaContByProp(source, "citation_title", false);
-		if(prop.size() != 0)
-			paperTitle = prop.get(0);
 
-		prop = getMetaContByProp(source, "citation_author", false);
-		if(prop.size() != 0)
-			for (String s : prop)
-				paperAuthors += (s + " : ");
+		Document jspdoc = Jsoup.parse(source);
+		Elements jspelem = jspdoc.getElementsByAttributeValue("name", "citation_title");
+		paperTitle = jspelem.attr("content");
+		jspelem = jspdoc.getElementsByAttributeValue("name", "citation_author");
+		for(int _idx = 0; _idx < jspelem.size(); _idx++) {
+			paperAuthors += jspelem.get(_idx).attr("content") + " - ";
+		}
+		if(paperAuthors.length() > 0)
+			paperAuthors = paperAuthors.substring(0, paperAuthors.length()-4);
 
-		prop = getMetaContByProp(source, "og:description", true);
-		if(prop.size() != 0)
-			paperAbstract = prop.get(0);
+		jspelem = jspdoc.getElementsByTag("blockquote");
+		paperAbstract = jspelem.text();
 
-		prop = getMetaContByProp(source, "citation_date", false);
-		if(prop.size() != 0)
-			paperDate = prop.get(0);
+		jspelem = jspdoc.getElementsByAttributeValue("name", "citation_date");
+		paperDate = jspelem.attr("content");
 	}
 
 	public String getArxivTitle() {
@@ -106,29 +107,4 @@ public class XNDArxivPlugin {
 	public boolean getArxivPageValidity() {
 		return isValidArxivPage;
 	}
-
-	private ArrayList<String> getMetaContByProp(String source, String property, boolean prop) {
-        ArrayList<String> mCont = new ArrayList<String>();
-        String ptoken = prop ? "property=\"" : "name=\"";
-        String ctoken = "content=\"";
-        int mbpos = source.indexOf("<meta");
-        int mepos = source.indexOf(">", mbpos);
-        while(mbpos != -1 && mepos != -1) {
-            String fmc = source.substring(mbpos, mepos);
-            int mpbpos = fmc.indexOf(ptoken);
-            int mpepos = fmc.indexOf("\"", mpbpos+ptoken.length());
-            if(mpbpos != -1 && mpepos != -1) {
-                if (fmc.substring(mpbpos+ptoken.length(), mpepos).equalsIgnoreCase(property)) {
-                    int mcbpos = fmc.indexOf(ctoken);
-                    int mcepos = fmc.indexOf("\"", mcbpos+ctoken.length());
-                    if(mcbpos != -1 && mcepos != -1)
-                        mCont.add(fmc.substring(mcbpos+ctoken.length(), mcepos));
-                }
-            }
-            mbpos = source.indexOf("<meta", mepos+1);
-            mepos = source.indexOf(">", mbpos);
-        }
-        return mCont;
-    }
-
 }

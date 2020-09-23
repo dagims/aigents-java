@@ -188,7 +188,8 @@ public class XNDMatcher extends Matcher{
 
 
 			if(path.contains("arxiv.org")) {
-				xndArxiv.processArticle(path);
+				if (!xndArxiv.processArticle(path))
+					continue;
 				title_text = xndArxiv.getArxivTitle();
 				instance.set(AL.times, xndArxiv.getArxivDate());
 				instance.setString(AL.summary, xndArxiv.getArxivAbstract());
@@ -214,7 +215,7 @@ public class XNDMatcher extends Matcher{
 			if (imager != null) {
 				body.debug("URL PATH: " + path);				
 				String image = runScript(path);
-				if (image.startsWith("http"))
+				if (image != null && image.startsWith("http"))
 					body.debug("Image from OpenGraph: " + image);
 				else {
 					image = imager.getAvailable(path, textPos);
