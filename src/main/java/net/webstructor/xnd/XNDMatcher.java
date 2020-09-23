@@ -141,15 +141,27 @@ public class XNDMatcher extends Matcher{
 
 	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException {
 		BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
-		String ex_t = extractor.getText(html);
-		
-    		long st_time = System.nanoTime();
+		String ex_t = ArticleExtractor.INSTANCE.getText(html);
+		long st_time = System.nanoTime();
 		long duration = System.nanoTime() - st_time;
 		st_time = System.nanoTime();
 		String summary = "";
-		if (ex_t.length() > 2000)
-			for (String s : TextRankSummary.getTopSentenceList(ex_t, 10))
-				summary += s;
+        	List<String> ordered = new ArrayList<String>();
+        	List<String> original=TextRankSummary.spiltSentence(ex_t);                
+        	List<String> unordered=TextRankSummary.getTopSentenceList(ex_t, 10);
+        	for (String s : original){
+            		for (String s1 : unordered){
+                		if (s1.equals(s)){
+                    			ordered.add(s1);
+                		}
+            		}
+        	}
+        	int i=0;
+        	if (ex_t.length() > 2000)
+			for (String s : ordered){
+				summary += s+"\n";
+
+        		}
 		duration = System.nanoTime() - st_time;
 		return summary;
 	}
