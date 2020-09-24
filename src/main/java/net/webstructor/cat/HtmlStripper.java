@@ -183,7 +183,7 @@ import net.webstructor.util.Str;
                 pos = 0;
 
             Set<String> link_blacklist = new HashSet<String>();
-            String[] jkl = {"header", "footer"};//, "aside"};
+            String[] jkl = {"header", "footer", "nav", "aside"};
             List<String> block_blacklist = java.util.Arrays.asList(jkl);
 			Document jspdoc = Jsoup.parse(source);
 			Elements jsplnks = jspdoc.getElementsByTag("a");
@@ -196,6 +196,7 @@ import net.webstructor.util.Str;
 					full_link = root_url + jsplnk.attr("href");
 				Elements parents = jsplnk.parents();
 				for (Element p : parents) {
+					// Class values to block: header, footer, nav, aside, side, menu
 					// System.out.println(" Parent Node: " + p.nodeName());
 					if (block_blacklist.contains(p.nodeName())
 							|| p.attr("class").contains("header")
@@ -204,7 +205,9 @@ import net.webstructor.util.Str;
 							|| p.attr("id").contains("footer")
 							|| p.attr("class").contains("menu")
 							|| p.attr("class").contains("submenu")
-							|| p.attr("class").contains("nav")) {
+							|| p.attr("class").contains("nav")
+							|| p.attr("class").contains("aside")
+							|| p.attr("class").contains("side")) {
 						if (full_link.endsWith("/"))
 							full_link = full_link.substring(0, full_link.length() - 1);
 						if (!link_blacklist.contains(full_link))
