@@ -199,7 +199,9 @@ import net.webstructor.util.Str;
 					// System.out.println(" Parent Node: " + p.nodeName());
 					if (block_blacklist.contains(p.nodeName())
 							|| p.attr("class").contains("header")
+							|| p.attr("id").contains("header")
 							|| p.attr("class").contains("footer")
+							|| p.attr("id").contains("footer")
 							|| p.attr("class").contains("menu")
 							|| p.attr("class").contains("submenu")
 							|| p.attr("class").contains("nav")) {

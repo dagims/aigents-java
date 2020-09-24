@@ -84,6 +84,10 @@ public class XNDArxivPlugin {
 		paperDate = jspelem.attr("content");
 	}
 
+	public boolean isValid() {
+		return isValidArxivPage;
+	}
+
 	public String getArxivTitle() {
 		return paperTitle;
 	}
@@ -102,6 +106,10 @@ public class XNDArxivPlugin {
 
 	public String getArxivPDFUrl() {
 		return pdfURL;
+	}
+
+	public String getArxivAbsUrl() {
+		return abstractURL;
 	}
 
 	public boolean getArxivPageValidity() {

@@ -250,8 +250,12 @@ public class XNDMatcher extends Matcher{
 
 			if (thingTexts != null)
 				thingTexts.putObject(thing, nl_text, instance);
-			if (thingPaths != null)
-				thingPaths.putObjects(thing, path == null ? "" : path, instance);
+			if (thingPaths != null) {
+				if(path.contains("arxiv.org") && xndArxiv.isValid())
+					thingPaths.putObjects(thing, xndArxiv.getArxivAbsUrl(), instance);
+				else
+					thingPaths.putObjects(thing, path == null ? "" : path, instance);
+			}
 
 			matches++;
 		}
