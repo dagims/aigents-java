@@ -26,14 +26,51 @@
 include_once("test_api.php");
 
 function test_login_debug() {
-	global $version;
-	global $copyright;
+	global $version, $copyright;
+	//debug registration and unregistration of a real non-test user
+	/*say("Login.");
+	get("What your email, name, surname?");
+	say("test@test.com, Firstname, Lastname");
+	get("What your secret question, secret answer?");
+	say("question, answer");
+	get("What your question?");
+	say("answer");
+	get("Ok. Hello Firstname Lastname!\nMy Aigents ".$version.$copyright);
+	logout("Firstname",true);
+	say("Login.");
+	get("What your email, name, surname?");
+	say("test@test.com, Firstname, Lastname");
+	get("What your secret question, secret answer?");
+	say("question, answer");
+	get("What your question?");
+	say("answer");
+	get("Ok. Hello Firstname Lastname!\nMy Aigents ".$version.$copyright);
+	logout("Firstname",true);
+	login();
+	//cleanup
+	say("You forget!");
+	get("Ok.");
+	say("Your email ''.");
+	get("Ok.");
+	say("Your things?");
+	get("My things activity time, aigents, areas, attention period, birth date, caching period, check cycle, clicks, clustering timeout, conversation, cookie domain, cookie name, copypastes, crawl range, currency, daytime, discourse id, discourse key, discourse url, email, email cycle, email login, email notification, email password, email retries, ethereum id, ethereum key, ethereum period, ethereum url, facebook challenge, facebook id, facebook key, facebook notification, facebook token, format, friend, friends, golos id, golos url, google id, google key, google token, googlesearch key, http origin, http port, http secure, http threads, http timeout, http url, ignores, items limit, john, language, login count, login time, login token, mail.pop3.starttls.enable, mail.pop3s.host, mail.pop3s.port, mail.smtp.auth, mail.smtp.host, mail.smtp.port, mail.smtp.ssl.enable, mail.smtp.starttls.enable, mail.store.protocol, money, name, news, news limit, number, paid term, paypal id, paypal key, paypal token, paypal url, peer, phone, queries, reddit id, reddit image, reddit key, reddit redirect, reddit token, registration time, reputation conservatism, reputation decayed, reputation default, reputation system, retention period, secret answer, secret question, selections, self, sensitivity threshold, serpapi key, share, shares, sites, slack id, slack key, slack notification, slack token, steemit id, steemit url, store cycle, store path, surname, tcp port, tcp timeout, telegram id, telegram name, telegram notification, telegram offset, telegram token, there, things, things count, time, topics, trusts, trusts limit, twitter id, twitter image, twitter key, twitter key secret, twitter redirect, twitter token, twitter token secret, update time, version, vkontakte id, vkontakte key, vkontakte token, word.");
+	say("Your things count?");
+	get("My things count 134.");
+	logout();*/
 	
+	//debug registration and unregistration conventional flow
 	say("My login.");
 	get("What your email, name, surname?");
+
+	say("Why are you asking this?");//trying to screw things up 
+	get("What your email, name, surname?");
+	
 	say("john@doe.org, john, doe");
 	get("What your secret question, secret answer?");
 
+	say("Why do you keep asking this?");
+	get("What your secret question, secret answer?");
+	
 	//say("sky color, red");
 	//get("What your sky color?");
 	
@@ -91,7 +128,6 @@ function test_login_new() {
 	get("Ok. Hello John Doe!\nMy Aigents ".$version.$copyright);
 	say("My logout.");
 	get("Ok.");
-	
 	//register by existing email -> login by email
 	say("My login.");
 	get("What your email, name, surname?");
@@ -200,9 +236,9 @@ function test_login_new() {
 	say("My verification code 1111.");
 	get("What your verification code?");
 	say("What new true sources, text, times, trust?");
-	get("There not.");
+	get("No.");
 	say("What my sites name, trust?");
-	get("Your sites not.");
+	get("No.");
 	say("What my verification code?");
 	get("What your verification code? Sent to john@doe.org.");
 	say("My verification code 1234.");
@@ -250,7 +286,7 @@ function test_login_new() {
 	say("My email john@doe.org.");
 	get("What your verification code? Sent to john@doe.org.");
 	say("What times today, new true?");
-	get("There not.");
+	get("No.");
 	say("What my verification code?");
 	get("What your verification code? Sent to john@doe.org.");
 	say("My verification code 1234.");
@@ -296,14 +332,14 @@ function test_login_new() {
 	say("My email ali@baba.org.");
 	get("What your secret question, secret answer?");	
 	//failing scenario: specify secrets - cancel in the middle
-	say("Not.");
+	say("No.");
 	get("What your email, name, surname?");
 	say("My email ali@baba.org.");
 	get("What your secret question, secret answer?");
 	say("My secret question sezame, secret answer simsim.");
 	get("What your sezame?");
 	//failing scenario: verify login - cancel in the middle	
-	say("Not.");
+	say("No.");
 	get("What your email, name, surname?");
 	say("My email ali@baba.org.");
 	get("What your sezame?");
@@ -386,13 +422,13 @@ function test_login_new() {
 	say("My email ali@baba.com.");
 	get("Ok.");
 	say("My email john@doe.com.");
-	get("Email john@doe.com is owned.");
+	get("No. Email john@doe.com is owned.");
 	say("What is peer, name test email?");
-	get("There not.");
+	get("No.");
 	say("There is peer, name test, email ali@baba.org.");
 	get("Ok.");
 	say("Is peer, name test email john@doe.com.");
-	get("Email john@doe.com is owned.");
+	get("No. Email john@doe.com is owned.");
 	say("What is peer, name test email?");
 	get("There email ali@baba.org.");	
 	say("Is peer, name test email baba@ali.org.");
@@ -421,10 +457,10 @@ function test_login_new() {
 	get("Ok. Hello Ali Baba!\nMy Aigents ".$version.$copyright);
 	//bind google => fail
 	say("My google id 'testid1', google token 'testcode1'.");
-	get("Google id testid1 is owned.");
+	get("No. Google id testid1 is owned.");
 	//set google to other => fail
 	say("Is peer, name test google id 'testid1'.");
-	get("Google id testid1 is owned.");
+	get("No. Google id testid1 is owned.");
 	//success => check later
 	say("Is peer, name test google id 'testid2'.");
 	get("Ok.");
@@ -452,7 +488,7 @@ function test_login_new() {
 	say("My sezame simsim.");
 	get("Ok. Hello Ali Baba!\nMy Aigents ".$version.$copyright);
 	say("What my google id?");
-	get("Your not.");
+	get("No.");
 	say("My google id 'testid3', google token 'testcode3'.");
 	get("Ok.");
 	say("My logout.");
@@ -524,9 +560,9 @@ function test_login_old() {
 	say("What your name?");
 	get("My name aigents.");
 	say("What your name, email password?");
-	get("No right.");
+	get("No. No right.");
 	say("Your name dummy.");
-	get("No right.");
+	get("No. No right.");
 	say("What your name?");
 	get("My name aigents.");
 	test_o("My logout.");
@@ -554,9 +590,12 @@ function test_login_old() {
 	test_o("What name john email, surname?");
 	test_i("John email doe@john.org, surname dare; email john@doe.org, surname doe.");
 	test_o("What your things?");
-	get("My things activity time, aigents, areas, attention period, birth date, caching period, check cycle, clicks, clustering timeout, cookie domain, cookie name, copypastes, crawl range, currency, daytime, discourse id, discourse key, discourse url, email, email cycle, email login, email notification, email password, email retries, ethereum id, ethereum key, ethereum period, ethereum url, facebook challenge, facebook id, facebook key, facebook notification, facebook token, format, friend, friends, golos id, golos url, google id, google key, google token, googlesearch key, http origin, http port, http secure, http threads, http timeout, ignores, items limit, john, john, language, login count, login time, login token, mail.pop3.starttls.enable, mail.pop3s.host, mail.pop3s.port, mail.smtp.auth, mail.smtp.host, mail.smtp.port, mail.smtp.ssl.enable, mail.smtp.starttls.enable, mail.store.protocol, money, name, news, news limit, number, paid term, paypal id, paypal key, paypal token, paypal url, peer, phone, queries, reddit id, reddit image, reddit key, reddit redirect, reddit token, registration time, reputation conservatism, reputation decayed, reputation default, reputation system, retention period, secret answer, secret question, selections, self, sensitivity threshold, serpapi key, share, shares, sites, slack id, slack key, slack notification, slack token, steemit id, steemit url, store cycle, store path, surname, tcp port, tcp timeout, telegram id, telegram name, telegram notification, telegram offset, telegram token, there, things, things count, time, topics, trusts, trusts limit, twitter id, twitter image, twitter key, twitter key secret, twitter redirect, twitter token, twitter token secret, update time, version, vkontakte id, vkontakte key, vkontakte token, word.");
+	get("My things activity time, aigents, areas, attention period, birth date, caching period, check cycle, clicks, clustering timeout, conversation, cookie domain, cookie name, copypastes, crawl range, currency, daytime, discourse id, discourse key, discourse url, email, email cycle, email login, email notification, email password, email retries, ethereum id, ethereum key, ethereum period, ethereum url, facebook challenge, facebook id, facebook key, facebook notification, facebook token, format, friend, friends, golos id, golos url, google id, google key, google token, googlesearch key, http origin, http port, http secure, http threads, http timeout, http url, ignores, items limit, john, john, language, login count, login time, login token, mail.pop3.starttls.enable, mail.pop3s.host, mail.pop3s.port, mail.smtp.auth, mail.smtp.host, mail.smtp.port, mail.smtp.ssl.enable, mail.smtp.starttls.enable, mail.store.protocol, money, name, news, news limit, number, paid term, paypal id, paypal key, paypal token, paypal url, peer, phone, queries, reddit id, reddit image, reddit key, reddit redirect, reddit token, registration time, reputation conservatism, reputation decayed, reputation default, reputation system, retention period, secret answer, secret question, selections, self, sensitivity threshold, serpapi key, share, shares, sites, slack id, slack key, slack notification, slack token, steemit id, steemit url, store cycle, store path, surname, tcp port, tcp timeout, telegram id, telegram name, telegram notification, telegram offset, telegram token, there, things, things count, time, topics, trusts, trusts limit, twitter id, twitter image, twitter key, twitter key secret, twitter redirect, twitter token, twitter token secret, update time, version, vkontakte id, vkontakte key, vkontakte token, word.");
 	say("What times today?");//debug
-	get("There not.");
+	get("No.");
+//TODO: remove this hack needed to disappear "about" & "context" variables appeared due to implicit search spawned above 
+	say("You forget!");//
+	get("Ok.");
 	test_o("What your things count?");
 	test_i("My things count ".($base_things_count + 1).".");
 	say("What your things?");
@@ -575,7 +614,7 @@ function test_login_old() {
 	test_o("No email john@doe.org, name John, surname Doe.");
 	test_i("Ok.");
 	test_o("What name john email, surname?");
-	test_i("John not.");
+	test_i("No.");
 	test_o("You load test1.txt!");
 	test_i("Ok.");
 	test_o("What your things count?");
@@ -874,16 +913,16 @@ function test_login_areas() {
 	say("You forget!");
 	get("Ok.");
 	say("What times today?");
-	get("There not.");
+	get("No.");
 	
 	say("What email john@doe.org areas?");
 	get("There areas academgorodok.");
 	say("What email doe@john.org areas?");
-	get("No right.");
+	get("No. No right.");
 	say("What email ali@baba.xxx areas?");
-	get("No right.");
+	get("No. No right.");
 	say("What email baba@ali.xxx areas?");
-	get("No right.");
+	get("No. No right.");
 	say("What areas academgorodok email?");
 	get("There email ali@baba.xxx; email john@doe.org.");
 	say("What areas stock market email?");
@@ -932,7 +971,7 @@ function test_login_sessions() {
 	say("what is john is?");
 	get("There is john.");
 	say("what is doe is?");
-	get("There not.");
+	get("No.");
 	$john_cookie = get_cookie();//save session
 	set_cookie(null);//reset session
 	
@@ -942,11 +981,11 @@ function test_login_sessions() {
 	say("what name john surname?");
 	get("John surname doe.");
 	say("what name john?");
-	get("No right.");
+	get("No. No right.");
 	say("what is doe is?");
 	get("There is doe.");
 	say("what is john?");
-	get("No right.");
+	get("No. No right.");
 	say("what john surname?");
 	get("John surname doe.");
 	
@@ -957,13 +996,15 @@ function test_login_sessions() {
 	say("what is john is?");
 	get("There is john.");
 	say("what is doe is?");
-	get("No right.");
+	get("No. No right.");
 	say("what name doe?");
-	get("No right.");
+	get("No. No right.");
 	say("what name doe email?");
 	get("Doe email doe@john.org.");
 	say("what email doe@john.org?");
-	get("No right.");
+	get("No. No right.");
+	say("You forget!");
+	get("Ok.");
 	say("Your things count?");
 	get("My things count ".($base_things_count + 2).".");//count with 2 sessions
 	

@@ -39,7 +39,7 @@ import net.webstructor.al.Writer;
 import net.webstructor.cat.StringUtil;
 import net.webstructor.util.Array;
 
-public class Thing extends Anything { // implements ORObject
+public class Thing extends Anything implements Named { // implements ORObject
 
 	private static final String[] names = new String[] {//TODO have this in Schema, not here and in AL
 		AL.is,
@@ -50,14 +50,13 @@ public class Thing extends Anything { // implements ORObject
 		AL.times,
 		AL.sources,
 		AL.patterns,
+		AL.responses,//TODO make is so thing does not need all imaginable properties declared explicitly
 		AL.trust,
 		AL.query,//TODO: move this out to configurable schema and/or class properties with class specified in query!?
 		AL.click,//TODO: move all of the following out to news or name?
 		AL.selection,
 		AL.copypaste,
 		AL._new,
-		//AL.image,
-		//AL.title,
 		AL.text
 	};
 	
@@ -149,8 +148,9 @@ public class Thing extends Anything { // implements ORObject
     	}
 		return sb.toString();
 	}
-	
-	public String getName() {
+
+	@Override
+	public String name() {
 		//TODO: ensure it is unique
 		return getString(AL.name);
 	}
@@ -257,12 +257,12 @@ public class Thing extends Anything { // implements ORObject
 	public boolean is(String[] exceptions) {
 		if (AL.empty(exceptions))
 			return false;
-		if (Array.contains(exceptions,getName()))
+		if (Array.contains(exceptions,name()))
 			return true;
 		Collection is = (Collection)get(AL.is);
 		if (is !=  null)
 			for (Iterator it = is.iterator(); it.hasNext();)	
-				if (Array.contains(exceptions, ((Thing)it.next()).getName()))
+				if (Array.contains(exceptions, ((Thing)it.next()).name()))
 					return true;
 		return false;
 	}
@@ -313,6 +313,10 @@ public class Thing extends Anything { // implements ORObject
 			storager.del(name, value, this);//update storager index
 		return this; 
 	}
+
+    public boolean empty() {
+    	return properties == null || properties.isEmpty();
+    }
 	
 	//actual properties that thing possess
     public String[] getNamesAvailable() {
@@ -323,29 +327,32 @@ public class Thing extends Anything { // implements ORObject
     	return names;
     }
 
-    /*
-    public String[] getNamesPossible1() {
-    	Object has = get(AL.has);
+    //TODO: use this instead of the earlier one
+    public java.util.Set<String> getNamesPossible(java.util.Set<String> set) {
+       	Object has = get(AL.has);
     	if (has instanceof Collection) {
-    		Collection coll = (Collection)has;
-    		String[] has_names = new String[coll.size()];
-    		int i = 0;
-    		for (Iterator it = coll.iterator();it.hasNext();)
-    			has_names[i++] = ((Thing)it.next()).getName();
-    		return Array.union(new String[][]{getNamesAvailable(), names, has_names});
+    		Collection properties = (Collection)has;
+      		for (Object p : properties)
+    			set.add(((Thing)p).name());
     	}
-    	else
-    		return Array.union(getNamesAvailable(), names);
+       	Object is = get(AL.is);
+    	if (is instanceof Collection) {
+    		Collection classes = (Collection)is;
+      		for (Object c : classes)
+      			((Thing)c).getNamesPossible(set);
+    	}
+    	for (String n : names)//TODO: eliminate this hack, do this my means of Schema and inheritance
+    		set.add(n);
+    	return set;
     }
-    */
-
+    
     public String[] getNamesPossible() {
     	ArrayList has_names = new ArrayList();
        	Object has = get(AL.has);
     	if (has instanceof Collection) {
     		Collection coll = (Collection)has;
       		for (Iterator it = coll.iterator();it.hasNext();)
-    			has_names.add(((Thing)it.next()).getName());
+    			has_names.add(((Thing)it.next()).name());
     	}
        	Object is = get(AL.is);
     	if (is instanceof Collection) {
@@ -355,7 +362,7 @@ public class Thing extends Anything { // implements ORObject
       	    	if (ishas instanceof Collection) {
       	    		Collection iscoll = (Collection)ishas;
       	      		for (Iterator isit = iscoll.iterator();isit.hasNext();)
-      	    			has_names.add(((Thing)isit.next()).getName());
+      	    			has_names.add(((Thing)isit.next()).name());
       	    	}
       		}
     	}
@@ -423,13 +430,22 @@ public class Thing extends Anything { // implements ORObject
 				Object e = it.next();
 				if (sb.length()>0)
 					sb.append(", ");//TODO: unhack the hack!?
-				sb.append(e instanceof Thing ? ((Thing)e).getName() : e.toString());
+				sb.append(e instanceof Thing ? ((Thing)e).name() : e.toString());
 			}
 			return sb.toString();
 		}
 		return o.toString();
 	}
 
+	public Collection getCollection(String name) {
+		Object o = get(name);
+		if (o == null || o instanceof Collection)
+			return (Collection)o;
+		Collection c = new ArrayList(1);
+		c.add(o);
+		return c;
+	}
+	
 	public final Object getFirst(String name) {
 		Collection iss = getThings(name);
 		return AL.empty(iss) ? null : (Thing)iss.iterator().next(); 

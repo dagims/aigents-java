@@ -40,7 +40,7 @@ import net.webstructor.comm.vk.VK;
 import net.webstructor.core.Thing;
 import net.webstructor.util.Array;
 
-class Login extends Mode {	
+class Login extends Responser {	
 	static String[] login_context = new String[] {"email", "name", "surname"/*, "birth date"*/};
 	
 	private Thing singleRegisteredPeer(Session session) throws Exception {
@@ -75,7 +75,7 @@ class Login extends Mode {
 					session.getStoredPeer().setString(Body.google_key, enstir[5]);
 			} else { 
 				session.sessioner.body.debug("Google failed: "+session.peer);
-				session.output("Not.");
+				session.output(session.no());
 			}
 		}
 		return false;
@@ -110,7 +110,7 @@ session.sessioner.body.debug("vkontakte: "+id+" "+token);
 				session.bind("vkontakte",id,enst[3],enst[0],enst[1],enst[2]);//offline token,email,name,surname
 			} else { 
 				session.sessioner.body.debug("vkontakte login failed: "+session.peer);
-				session.output("Not.");
+				session.output(session.no());
 			}
 		}
 		return false;
@@ -153,7 +153,7 @@ session.sessioner.body.debug("vkontakte: "+id+" "+token);
 					session.sessioner.body.debug("Facebook auto-log:"+peer);
 					peer.set(Body.facebook_id, id);
 					peer.set(Body.facebook_token, token);
-					session.mode = new Conversation();
+					session.responser = session.sessioner.body.getResponser();
 					session.peer = new Thing(peer,null);
 					session.output(session.welcome());
 					return false;
@@ -163,7 +163,7 @@ session.sessioner.body.debug("vkontakte: "+id+" "+token);
 					session.sessioner.body.debug("Facebook auto-reg:"+peer);
 					peer.set(Body.facebook_id, id);
 					peer.set(Body.facebook_token, token);
-					session.mode= new Conversation();
+					session.responser= new Conversation();
 					session.output(session.welcome());
 					try {
 						Peer.populateContent(session,Body.testEmail(email));
@@ -177,7 +177,7 @@ session.sessioner.body.debug("vkontakte: "+id+" "+token);
 			}
 		}
 		session.sessioner.body.debug("Facebook fail:"+id+"/"+token);
-		session.output("Not.");
+		session.output(session.no());
 		return false;
 	}
 	
@@ -188,12 +188,9 @@ session.sessioner.body.debug("vkontakte: "+id+" "+token);
 		if (tryRSS(session.getStorager(),session))//if RSS feed tried successflly 
 			return false;//no further interaction is needed
 		
-		if (noSecretQuestion(session))
+		if (session.mood == AL.interrogation && noSecretQuestion(session))
 			return answer(session);
 		
-		if (Responser.response(session))
-			return false;//TODO: append login flow?
-
 		if (session.peer == null) {
 			session.peer = new Thing();//create dummy peer
 		}
@@ -225,7 +222,7 @@ session.sessioner.body.debug("vkontakte: "+id+" "+token);
 			try {
 				Thing peer = singleRegisteredPeer(session);
 				if (peer != null) {
-					session.mode= new Conversation();
+					session.responser= session.sessioner.body.getResponser();
 					session.peer = new Thing(peer,null);
 					session.output(session.welcome());
 					return false;
@@ -248,6 +245,8 @@ session.sessioner.body.debug("vkontakte: "+id+" "+token);
 			session.sessioner.body.output("Login:"+Writer.toString(session.peer)+".");
 		}
 		
+		//Identification by email is expexted to be unique
+		//Collection peers = session.sessioner.body.storager.get(session.peer,login_context);
 		Collection peers = null;
 		if (!AL.empty(session.peer.getString(AL.email))){//checking by email only!!!
 			peers = session.sessioner.body.storager.get(session.peer,new String[]{AL.email});
@@ -268,11 +267,11 @@ session.sessioner.body.debug("vkontakte: "+id+" "+token);
 			session.peer = new Thing((Thing)peers.iterator().next(),null);
 			//if registered -  Verification
 			if (session.peer.getString(Peer.secret_answer) != null){
-				session.mode= new Verification();
+				session.responser= new Verification();
 				session.expect(new String[]{session.peer.getString(Peer.secret_question)});
 			}else{
 			//if not registered - Registration
-				session.mode= new Registration();
+				session.responser= new Registration();
 				session.expect(null);
 			}
 			return true;
@@ -300,7 +299,8 @@ session.sessioner.body.debug("vkontakte: "+id+" "+token);
 				//TODO: do this default initialization in some other place!
 				//must initialize parameter sheets for peers anyway otherwise they can't be quaried by ALL-kind "open" queries
 				storedPeer.setString(Peer.check_cycle,"3 hours");//TODO:move out of here?
-				session.mode = new Registration();
+
+				session.responser = new Registration();
 				session.expect(null);
 				return true;
 			}

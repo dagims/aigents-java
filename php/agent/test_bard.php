@@ -156,7 +156,7 @@ function test_bard() {
 	//http://www.bostonscientific.com/en-US/products/dilatation/uromax-ultra.html
 	//"sparse pattern" to capture information?
 	//say("You reading site http://www.bostonscientific.com/!");
-	//get("Not.");
+	//get("No.");
 		
 	//TODO: provide parsing example for it!
 	//before, was prohibited by robots.txt
@@ -171,9 +171,9 @@ function test_bard() {
 	say("No there is introcan catheters.");
 	get("Ok.");
 	say("What is boston catheters?");
-	get("There not.");
+	get("No.");
 	say("What is catheters?");
-	get("There not.");
+	get("No.");
 	
 	//TODO:
 	//http://www.bostonscientific.com/ : products
@@ -181,7 +181,7 @@ function test_bard() {
 	//http://www.bostonscientific.com/en-US/products/catheters--guide.html : catheter
 	/*
 	say("You reading site http://www.bostonscientific.com!");
-	get("Not.");
+	get("No.");
 	say("My topics products.");
 	get("Ok.");
 	say("Catheters patterns catheter, catheters, 'catheters:'.");//patterns has been defined above
@@ -229,7 +229,7 @@ function test_bard() {
 	say("No there is introcan catheters.");
 	get("Ok.");
 	say("What is introcan catheters?");
-	get("There not.");
+	get("No.");
 
 	//TODO: can't follow 'http://www.bbraunusa.com/products.html?id=00020743040000000422&prid=PRID00001011' 
 	// from http://www.bbraunusa.com/products.html?id=00020743040000000422
@@ -259,15 +259,15 @@ function test_bard() {
 	//https://www.cookmedical.com/products/uro_023_webds/
 	//https://www.cookmedical.com/products/di_cxi_webds/
 	say("You reading site https://www.cookmedical.com/!");
-	get("Not.");
+	get("No.");
 	say("My topics products.");
 	get("Ok.");
 	say("You reading site https://www.cookmedical.com/!");
 	get("My reading site https://www.cookmedical.com/.");
 	say("What is boston catheters?");
-	get("There not.");
+	get("No.");
 	say("What is catheters?");
-	get("There not.");
+	get("No.");
 	say("My topics urology.");
 	get("Ok.");
 	say("My topics product list.");

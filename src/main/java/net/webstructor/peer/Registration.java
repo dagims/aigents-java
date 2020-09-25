@@ -1,7 +1,7 @@
 /*
  * MIT License
  * 
- * Copyright (c) 2005-2019 by Anton Kolonin, Aigents
+ * Copyright (c) 2005-2020 by Anton Kolonin, Aigents®
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@ import net.webstructor.comm.Emailer;
 import net.webstructor.core.Property;
 import net.webstructor.core.Thing;
 
-class Registration extends Mode {	
+class Registration extends Responser {	
 
 	public static final String[] question_answer = new String[]{Peer.secret_question,Peer.secret_answer};
 	public static final String[] answer_only = new String[]{Peer.secret_answer};
@@ -94,11 +94,11 @@ class Registration extends Mode {
 	}
 	
 	public boolean process(Session session) {
-		if (noSecretQuestion(session))
+		if (session.mood == AL.interrogation && noSecretQuestion(session))
 			return answer(session);
 
 		if (Reader.read(session.input(), cancel_pattern)) {
-			session.mode = new Login();
+			session.responser = new Login();
 			session.peer = null;
 			session.expect(null);
 			return true;
@@ -120,7 +120,7 @@ class Registration extends Mode {
 			Property pa = new Property(session.peer,Peer.secret_answer);
 			Seq seq = new Seq(new Object[]{new Any(1,AL.i_my),new Any(new Object[]{new Seq(new Object[]{"secret","question",pq}),new Seq(new Object[]{"secret", "answer"  ,pa})})});
 //TODO rewrite this with AL pattern!?
-			if (!Reader.read(session.input(), seq))//well-formed AL for q and a
+			if (session.mood != AL.interrogation && !Reader.read(session.input(), seq))//well-formed AL for q and a
 				if (session.expected() != null){
 					//free-text like "passport number, 123456 querty"
 					if (!Reader.read(session.input(), Reader.pattern(session.peer, session.expected(),",")))
@@ -163,7 +163,7 @@ class Registration extends Mode {
 		}
 		if (q != null && a != null) {
 			session.updateRegistration();
-			session.mode= new Verification();
+			session.responser= new Verification();
 			storedPeer.update(session.peer,null);
 			session.expect(new String[]{q});
 			return true;

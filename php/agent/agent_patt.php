@@ -98,7 +98,7 @@ function test_agent_patterns() {
 	get("Ok.");
 	
 	say("Path?");//sanity check
-	get("Path not.");
+	get("No.");
 
 	say("No there is dolphins.");
 	file_put_contents($basePath."html/test.html","<html><body>Here is the story. Everyone topics that dolphins are cool. They are just great.</body></html>");
@@ -209,7 +209,7 @@ function test_agent_patterns() {
 	say_thing($weather,false);
 	
 	say("Path?");//sanity check
-	get("Path not.");
+	get("No.");
 	
 	
 	//test phrase boundaries
@@ -385,7 +385,6 @@ function test_agent_patterns() {
 //TODO:	
 	//get("There text объявляются торги земельных участков; text там состоится аукцион земельного участка.");
 	get();
-//brk();	
 	say("No there is '".$text."'.");
 	say_thing($land,false);
 	

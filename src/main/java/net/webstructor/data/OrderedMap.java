@@ -49,6 +49,18 @@ public class OrderedMap<P,T> extends ArrayList<T> {
 		return true;
 	}
 	
+	/*public OrderedMap<P,T> clone() {
+		OrderedMap<P,T> clone = new OrderedMap<P,T>();
+		for (T t : this) {
+			for (P p : map.keySet()) {
+				T pt = map.get(p);
+				if (t.equals(pt))
+					put(p,t);
+			}
+		}
+		return clone;
+	}*/
+	
 	public Collection<T> values() {
 		return this;
 	}

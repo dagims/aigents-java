@@ -30,7 +30,8 @@ function test_agent_learn() {
 	global $basePath;
 	global $version;
 	global $copyright;
-
+	global $base_things_count;
+	
 	//login, registration, verification
 	say("My name john, email john@doe.org, surname doe.");
 	get("What your secret question, secret answer?");
@@ -59,10 +60,12 @@ function test_agent_learn() {
 	get("Person has firstname, lastname, name person, patterns '\$firstname \$lastname {CEO CTO Founder Director}'.");
 	say("Person?");
 	get("Person has firstname, lastname, name person, patterns '\$firstname \$lastname {CEO CTO Founder Director}'.");
+	say("What your things count?");
+	get("My things count ".($base_things_count+4).".");
 	say("Path?");
-	get();
+	get("No.");
 	say("What person path?");
-	get("Person path not.");
+	get("No.");
 	
 	//aside from learning, test ability to detect really new news only
 	//TODO: fix parsing so 'john doe founder' is parsed out of 'there is john doe founder elected'
@@ -75,7 +78,7 @@ function test_agent_learn() {
 	say("Text john doe founder times 2015-01-01");//push event back
 	get("Ok.");
 	say("You reading person in http://localtest.com/test.html!");
-	get("Not.");
+	get("No.");
 	file_put_contents($basePath."html/test.html","<html><body>there is . john doe director appointed</body></html>");
 	say("You reading person in http://localtest.com/test.html!");
 	get("My reading person in http://localtest.com/test.html.");
@@ -83,13 +86,13 @@ function test_agent_learn() {
 	get("There text john doe director, times today; text john doe founder, times 2015-01-01.");
 	file_put_contents($basePath."html/test.html","<html><body>there is . john doe founder re-elected</body></html>");
 	say("You reading person in http://localtest.com/test.html!");
-	//get("Not.");
+	//get("No.");
 	get("My reading person in http://localtest.com/test.html.");
 	say("What is person text, times?");
 	get("There text john doe director, times today; text john doe founder, times 2015-01-01; text john doe founder, times today.");
 	file_put_contents($basePath."html/test.html","<html><body>there is . john doe director dismissed</body></html>");
 	say("You reading person in http://localtest.com/test.html!");
-	get("Not.");
+	get("No.");
 	say("What is person text, times?");
 	//get("There text john doe founder, times 2015-01-01.");
 	get("There text john doe director, times today; text john doe founder, times 2015-01-01; text john doe founder, times today.");
@@ -101,7 +104,7 @@ function test_agent_learn() {
 	get("There text ali baba founder, times today; text john doe director, times today; text john doe founder, times 2015-01-01; text john doe founder, times today.");
 	file_put_contents($basePath."html/test.html","<html><body>there is . ali baba founder approved. john doe presented stuff. john doe director gave overview.</body></html>");
 	say("You reading person in http://localtest.com/test.html!");
-	get("Not.");
+	get("No.");
 	say("What times today?");
 	get();	
 	say("Times today times yesterday.");
@@ -112,7 +115,7 @@ function test_agent_learn() {
 	say("What is http://localtest.com/test.html times, text?");
 	get("There text 'there is . ali baba founder approved. john doe presented stuff. john doe director gave overview.', times yesterday.");
 	say("You reading person in http://localtest.com/test.html!");
-	get("Not.");
+	get("No.");
 	file_put_contents($basePath."html/test.html","<html><body>there is . joe johns CTO appointed</body></html>");
 	say("You reading person in http://localtest.com/test.html!");
 	get("My reading person in http://localtest.com/test.html.");
@@ -147,7 +150,7 @@ function test_agent_learn() {
 	say("No there times today.");
 	get("Ok.");
 	say("What is person firstname, lastname, sources?");
-	get("There not.");
+	get("No.");
 	say("What person path?");
 	get("Person path '{[[about us] [company management]]}'.");
 	//find path for thing on site B
@@ -168,7 +171,7 @@ function test_agent_learn() {
 	say("No there is person.");
 	get("Ok.");
 	say("What is person firstname, lastname?");
-	get("There not.");
+	get("No.");
 	//find thing by path on site B
 	say("You reading person in http://localtest.com/siteb/!");
 	get("My reading person in http://localtest.com/siteb/.");
@@ -211,7 +214,7 @@ function test_agent_learn() {
 	say("No there is person.");
 	get("Ok.");
 	say("What is person firstname, lastname?");
-	get("There not.");
+	get("No.");
 
 	//http://www.irobot.com/->About iRobot->Management Team->Success
 	//https://www.google.com->About->Management->Success
@@ -275,11 +278,11 @@ function test_agent_learn() {
 	say("No name john.");
 	get("Ok.");
 	say("What times today is?");
-	get();//TODO: get("There not."); //decide what to do with multiple along-the-path sites
+	get();//TODO: get("No."); //decide what to do with multiple along-the-path sites
 	say("No there times today.");
 	get("Ok.");
 	say("What times today?");
-	get("There not.");
+	get("No.");
 	say("My logout.");
 	get("Ok.");
 	
@@ -321,7 +324,7 @@ function test_agent_agglomerate() {
 	get("Ok.");
 	
 	say("What times today?");
-	get("There not.");
+	get("No.");
 	say("My sites http://localtest.com/sitea/test.html, http://localtest.com/siteb/test.html.");
 	say("My trusts http://localtest.com/sitea/test.html, http://localtest.com/siteb/test.html.");
 	say("You reading!");
@@ -334,25 +337,27 @@ function test_agent_agglomerate() {
 	get("Ok.");
 	say("no there times today.");
 	get("Ok.");
-	say("What is '\$firstname \$lastname {CEO CTO Founder Director}'?");
-	get("There not.");
+//TODO: note that witohiut of "text", non-complex query handling will fallback to chat mode!
+	//say("What is '\$firstname \$lastname {CEO CTO Founder Director}' text?");
+	say("What is '\$firstname \$lastname {CEO CTO Founder Director}' text?");
+	get("No.");
 	say("You reading!");
 	sleep($timeout);
-	say("What is '\$firstname \$lastname {CEO CTO Founder Director}'?");
-	get("There not.");
+	say("What is '\$firstname \$lastname {CEO CTO Founder Director}' text?");
+	get("No.");
 	file_put_contents($basePath."html/siteb/test.html","<html><body>there is . john doe founder adviced</body></html>");
 	say("You reading!");
 	sleep($timeout);
-	say("What is '\$firstname \$lastname {CEO CTO Founder Director}'?");
-	get("There not.");
+	say("What is '\$firstname \$lastname {CEO CTO Founder Director}' text?");
+	get("No.");
 	say("You forget everything!");
 	get("Ok.");
 	say("What times today?");
 	get("There is http://localtest.com/sitea/test.html, text 'there is . john doe founder joined', times today; is http://localtest.com/siteb/test.html, text 'there is . john doe founder adviced', times today.");
 	say("You reading!");
 	sleep($timeout);
-	say("What is '\$firstname \$lastname {CEO CTO Founder Director}'?");
-	get("There not.");
+	say("What is '\$firstname \$lastname {CEO CTO Founder Director}' text?");
+	get("No.");
 	file_put_contents($basePath."html/siteb/test.html","<html><body>there is . john doe founder declared</body></html>");
 	say("You reading!");
 	sleep($timeout);
@@ -374,7 +379,7 @@ function test_agent_agglomerate() {
 	say("no there times today.");
 	get("Ok.");
 	say("What is '\$firstname \$lastname {CEO CTO Founder Director}'?");
-	get("There not.");
+	get("No.");
 	say("You forget everything!");
 	get("Ok.");
 //TODO: make this working WITHOUT "and" and WITH it!!!
@@ -385,20 +390,23 @@ function test_agent_agglomerate() {
 	say("What is '\$firstname \$lastname {CEO CTO Founder Director}', new true text?");
 	get("There text xx xxx founder; text yy yyy cto.");
 	say("New true new false.");//discard news
+	get("Ok.");
 	file_put_contents($basePath."html/siteb/test.html","<html><body>there is . xx xxx founder declared . yy yyy cto said . zz zzz cto announced .</body></html>");
 	say("You reading!");
 	sleep($timeout);
 	say("What is '\$firstname \$lastname {CEO CTO Founder Director}', new true text?");
 	get("There text zz zzz cto.");
 	say("New true new false.");//discard news	
+	get("Ok.");
 //TODO:make this working!
 	//file_put_contents($basePath."html/siteb/test.html","<html><body>there is . xx xxx founder declared. finally, yy yyy cto shouted. later, zz zzz cto spelled.</body></html>");
 	file_put_contents($basePath."html/siteb/test.html","<html><body>there is . xx xxx founder declared. yy yyy cto shouted. zz zzz cto spelled.</body></html>");
 	say("You reading!");
 	sleep($timeout);
 	say("What is '\$firstname \$lastname {CEO CTO Founder Director}', new true text?");
-	get("There not.");
+	get("No.");
 	say("New true new false.");//discard news
+	get("No. No thing.");
 	say("What is '\$firstname \$lastname {CEO CTO Founder Director}' times, text?");
 	get("There text xx xxx founder, times today; text yy yyy cto, times today; text zz zzz cto, times today.");	
 //TODO: make this working
@@ -409,6 +417,7 @@ function test_agent_agglomerate() {
 	say("What is '\$firstname \$lastname {CEO CTO Founder Director}', new true text?");
 	get("There text vv vvv cto; text ww www cto.");
 	say("New true new false.");//discard news
+	get("Ok.");
 	say("What is '\$firstname \$lastname {CEO CTO Founder Director}' times, text?");
 	get("There text vv vvv cto, times today; text ww www cto, times today; text xx xxx founder, times today; text yy yyy cto, times today; text zz zzz cto, times today.");
 	file_put_contents($basePath."html/siteb/test.html","<html><body>there is . yy yyy founder declared. zz zzz director shouted. ww www cto spelled.</body></html>");
@@ -419,12 +428,15 @@ function test_agent_agglomerate() {
 	
 	//Test snapshotting in LTM:
 	say("new true new false.");
+	get("Ok.");
 	say("no there is '\$firstname \$lastname {CEO CTO Founder Director}'.");
 	say("no there times today.");
+	get("Ok.");
 	say("You forget everything!");
+	get("Ok.");
 	file_put_contents($basePath."html/sitea/test.html","<html><body></body></html>");
 	say("What is '\$firstname \$lastname {CEO CTO Founder Director}'?");
-	get("There not.");
+	get("No.");
 	file_put_contents($basePath."html/siteb/test.html","<html><body>there is . xx xxx founder declared . yy yyy cto said .</body></html>");
 	say("You reading!");
 	sleep($timeout);
@@ -437,7 +449,7 @@ function test_agent_agglomerate() {
 	say("no there is '\$firstname \$lastname {CEO CTO Founder Director}'.");
 	say("no there times today.");
 	say("What times today?");
-	get("There not.");
+	get("No.");
 	file_put_contents($basePath."html/siteb/test.html","<html><body>there is . xx xxx founder declared . yy yyy cto said . zz zzz cto announced .</body></html>");
 	say("You reading!");
 	sleep($timeout);
@@ -450,7 +462,7 @@ function test_agent_agglomerate() {
 	say("You reading!");
 	sleep($timeout);
 	say("What is '\$firstname \$lastname {CEO CTO Founder Director}', new true text?");
-	get("There not.");//3
+	get("No.");//3
 	say("new true new false.");
 	say("no there is '\$firstname \$lastname {CEO CTO Founder Director}'.");
 	say("no there times today.");
@@ -466,7 +478,7 @@ function test_agent_agglomerate() {
 	say("no there is '\$firstname \$lastname {CEO CTO Founder Director}'.");
 	say("no there times today.");
 	say("What times today?");
-	get("There not.");
+	get("No.");
 	file_put_contents($basePath."html/siteb/test.html","<html><body>there is . yy yyy founder declared. zz zzz director shouted. ww www cto spelled.</body></html>");
 	say("You reading!");
 	sleep($timeout);
@@ -499,12 +511,12 @@ function test_agent_agglomerate() {
 	say("No name lastname.");
 	get("Ok.");
 	say("What times today?");
-	get("There not.");
+	get("No.");
 	say("You forget.");
 	get("Ok.");
 
 	say("What your things?");
-	get("My things activity time, aigents, areas, attention period, birth date, caching period, check cycle, clicks, clustering timeout, cookie domain, cookie name, copypastes, crawl range, currency, daytime, discourse id, discourse key, discourse url, email, email cycle, email login, email notification, email password, email retries, ethereum id, ethereum key, ethereum period, ethereum url, facebook challenge, facebook id, facebook key, facebook notification, facebook token, format, friend, friends, golos id, golos url, google id, google key, google token, googlesearch key, http origin, http port, http secure, http threads, http timeout, ignores, items limit, john, language, login count, login time, login token, mail.pop3.starttls.enable, mail.pop3s.host, mail.pop3s.port, mail.smtp.auth, mail.smtp.host, mail.smtp.port, mail.smtp.ssl.enable, mail.smtp.starttls.enable, mail.store.protocol, money, name, news, news limit, number, paid term, paypal id, paypal key, paypal token, paypal url, peer, phone, queries, reddit id, reddit image, reddit key, reddit redirect, reddit token, registration time, reputation conservatism, reputation decayed, reputation default, reputation system, retention period, secret answer, secret question, selections, self, sensitivity threshold, serpapi key, share, shares, sites, slack id, slack key, slack notification, slack token, steemit id, steemit url, store cycle, store path, surname, tcp port, tcp timeout, telegram id, telegram name, telegram notification, telegram offset, telegram token, there, things, things count, time, topics, trusts, trusts limit, twitter id, twitter image, twitter key, twitter key secret, twitter redirect, twitter token, twitter token secret, update time, version, vkontakte id, vkontakte key, vkontakte token, word.");
+	get("My things activity time, aigents, areas, attention period, birth date, caching period, check cycle, clicks, clustering timeout, conversation, cookie domain, cookie name, copypastes, crawl range, currency, daytime, discourse id, discourse key, discourse url, email, email cycle, email login, email notification, email password, email retries, ethereum id, ethereum key, ethereum period, ethereum url, facebook challenge, facebook id, facebook key, facebook notification, facebook token, format, friend, friends, golos id, golos url, google id, google key, google token, googlesearch key, http origin, http port, http secure, http threads, http timeout, http url, ignores, items limit, john, language, login count, login time, login token, mail.pop3.starttls.enable, mail.pop3s.host, mail.pop3s.port, mail.smtp.auth, mail.smtp.host, mail.smtp.port, mail.smtp.ssl.enable, mail.smtp.starttls.enable, mail.store.protocol, money, name, news, news limit, number, paid term, paypal id, paypal key, paypal token, paypal url, peer, phone, queries, reddit id, reddit image, reddit key, reddit redirect, reddit token, registration time, reputation conservatism, reputation decayed, reputation default, reputation system, retention period, secret answer, secret question, selections, self, sensitivity threshold, serpapi key, share, shares, sites, slack id, slack key, slack notification, slack token, steemit id, steemit url, store cycle, store path, surname, tcp port, tcp timeout, telegram id, telegram name, telegram notification, telegram offset, telegram token, there, things, things count, time, topics, trusts, trusts limit, twitter id, twitter image, twitter key, twitter key secret, twitter redirect, twitter token, twitter token secret, update time, version, vkontakte id, vkontakte key, vkontakte token, word.");
 	say("What your things count?");
 	get("My things count ".($base_things_count).".");
 

@@ -49,6 +49,8 @@ import net.webstructor.util.Str;
 public class Publisher { 
 	protected Body body;
 	protected Storager storager;
+	
+	private static final String[] text_date = new String[] {AL.text,AL.date};
 
 	public Publisher(Body body){
 		this.body = body;
@@ -67,10 +69,6 @@ public class Publisher {
 			Thing thing = (Thing)things[p];
 			Object[] paths = thingPaths.getSubKeyObjects(thing);
 			Collection latest = latest(thing,null);//assuming we can ignore the same things with different paths 
-//TODO: cleanup here and below
-/*boolean debug = "trump".equals(thing.getName());
-if (debug) for (Object o : latest)
-body.debug("Publisher update latest "+((Thing)o).getString(AL.text));*/
 			ArrayList collector = new ArrayList();
 			for (int i = 0; i < paths.length; i++){
 				String path = (String)paths[i];
@@ -82,29 +80,22 @@ body.debug("Publisher update latest "+((Thing)o).getString(AL.text));*/
 					//if (!AL.empty(ises) && !AL.empty(text)){
 						//String thingName = ((Thing)ises.iterator().next()).getName();
 					if (!AL.empty(text)){
-						String thingName = thing.getName();
+						String thingName = thing.name();
+						Date date = instance.getDate(AL.times,null);
+						if (!date.equals(now) && !AL.empty(body.storager.get(instance,text_date)))//ignore old copies
+							continue;
 					
 //TODO: use "forced" consistently						
 //TODO: make sure if GLOBAL novelty is required, indeed... 
 //TODO: use "newly existing" logic same as used in archiver.exists!?
 						
-						//Thing existing = existing(thing,instance,path,false,text);//if path were involved...
 						Thing existing = existing(latest,instance,false,text);
-/*if (text.equals("poll: trump falls 14 points behind biden after week of protests over george floyd's death"))
-text=text;	
-if (debug)
-body.debug("Publisher update instance "+instance.getString(AL.text));
-if (debug)
-body.debug("Publisher update existing STM "+(existing == null ? "null" : existing.getString(AL.text)));*/
 						if (existing != null) {//new path-less identity
 							existings.put(instance,existing);
 							continue;
 						}
 						//checking for existence before today, not just today... 
-						Date date = null;//instance.getDate(AL.times,null);
-						boolean exists = body.archiver.exists(thingName,text,date);
-/*f (debug)
-body.debug("Publisher update exists LTM "+exists);*/
+						boolean exists = body.archiver.exists(thingName,text,null);//ignore date
 						if (!forced && exists)//check LTM
 							continue;
 					
@@ -119,9 +110,8 @@ body.debug("Publisher update exists LTM "+exists);*/
 						collector.add(instance);
 					}
 				}
-				//update(storager,thing,instances,rootPath);
 				//TODO: real path here!!??
-				//update(storager,thing,instances,path);
+				//update(storager,thing,instances,rootPath);
 			}
 			body.getPublisher().update(thing,collector,rootPath,context);
 		}		
@@ -141,7 +131,7 @@ body.debug("Publisher update exists LTM "+exists);*/
 					//if (!AL.empty(ises) && !AL.empty(text)){
 						//String thingName = ((Thing)ises.iterator().next()).getName();
 					if (!AL.empty(text)){
-						String thingName = thing.getName();
+						String thingName = thing.name();
 						Thing existing = existings.get(instance);
 						
 //if (debug)
@@ -266,7 +256,7 @@ body.debug("Publisher update exists LTM "+exists);*/
 			//real path
 			Collection sources = t.getThings(AL.sources);
 			if (!AL.empty(sources)){
-				String source = ((Thing)sources.iterator().next()).getName();
+				String source = ((Thing)sources.iterator().next()).name();
 				if (!AL.empty(source) && !source.equals(path)){
 					if (currentPath == null || !currentPath.equals(source))
 						content.append(source).append('\n');
@@ -283,7 +273,7 @@ body.debug("Publisher update exists LTM "+exists);*/
 				}
 			}
 		}
-		return new String[]{thing.getName(),content.toString()};
+		return new String[]{thing.name(),content.toString()};
 	}
 	
 	//TODO: if forcer is given, don't update others
@@ -330,7 +320,7 @@ body.debug("Publisher update exists LTM "+exists);*/
 //TODO: eliminate duplicated !!!untrusted things here on peer-specific basis!!!???
 			t.set(AL._new, AL._true, peer);
 		}
-		body.update(peer, subject, content, signature);
+		body.update(peer, null, subject, content, signature);
 	}
 
 	//get count of news not trusted by the 1st peer trusted by self
@@ -372,7 +362,7 @@ body.debug("Publisher update exists LTM "+exists);*/
 					Thing peer = (Thing)pit.next();
 					target.set(AL._new, AL._true, peer);
 					try {
-						body.update(peer, subject, content, signature);
+						body.update(peer, null, subject, content, signature);
 					} catch (IOException e) {
 						body.error("Siter updating "+subject+" "+text+" "+signature,e);
 					}

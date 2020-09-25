@@ -87,7 +87,7 @@ public class Writer extends AL {
 			if (names == null)
 				names = thing.getNamesAvailable();
 			if (names.length == 0)
-				out.append(AL.not[0]);
+				out.append(AL.no[0]);
 			else {
 				String[] sorted = new String[names.length];
 				for (int i=0, c=0;i<names.length;i++) {
@@ -262,7 +262,7 @@ public class Writer extends AL {
 			toString(out,(String)obj,needsQuoting((String)obj) || (context instanceof String && Schema.quotable((String)context)));
 		else 
 		if (obj instanceof Property) 
-			out.append('$').append(((Property)obj).getName());
+			out.append('$').append(((Property)obj).name());
 		else 
 		if (obj instanceof Thing)
 			toString(out, (Thing) obj, context);
@@ -334,7 +334,7 @@ public class Writer extends AL {
 			head instanceof Thing && session != null && head.equals(session.getStoredPeer()) ? AL.you[0]: 
 			head instanceof Thing && session != null && session.getStoredPeer()==null ? AL.you[0]: //TODO: fix demo hack for anonymous users! 
 			head instanceof Thing && session != null && head.equals(session.getStoredPeer())? ((Thing)head).getString(name):
-			head instanceof Seq && ((Seq)head).size()==2 && ((Seq)head).get(0).equals(AL.name)? (String)((Seq)head).get(1): 
+			head instanceof Seq && ((Seq)head).size()==2 && ((Seq)head).get(0).equals(AL.name)? ((Seq)head).get(1).toString(): 
 			AL.there[0];
 		if (query != null && query.size() > 2 && query.get(1) instanceof String[] && ((String[])query.get(1)).length ==1)
 			ref += " "+((String[])query.get(1))[0];
@@ -349,7 +349,7 @@ public class Writer extends AL {
 				out.append(ref).append(' ');		
 			Collection things = (Collection)arg;
 			if (AL.empty(things)){
-				out.append(not[0]);
+				out.append(no[0]);
 			}else {
 				String[] sorted = new String[things.size()];
 				int c = 0;
@@ -525,9 +525,9 @@ public class Writer extends AL {
 			int i = 0;
 			for (Object o : set) {
 				if (i++ > 0)
-					sb.append(" ");
+					sb.append(";<br>");
 				if (o instanceof Thing) {
-					String n = ((Thing) o).getName();
+					String n = ((Thing) o).name();
 					if (!AL.empty(n))
 						o = n;
 				}

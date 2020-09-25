@@ -1264,7 +1264,7 @@ function edit_trust(title,list,verb,item,callback) {
 		var newstr = AL.toString(newval,"name");
 		requestBase(list,'My '+verb+' not '+oldstr+', '+newstr+'.'+
 			' Name '+newstr+' trust '+(oldchk ? 'true' : 'false')+'.');
-		$(item).children().children(".name").text(newval);
+		$(item).children().children().children().children(".name").text(newval);
 		menu_data[index][0] = newval;
 		if (callback)
 			callback(newval);
@@ -2183,7 +2183,7 @@ function talks_say_in(text) {
 		text = "Ok.";//return;
 	}
 	displayStatus(text);
-	$("#talks_log").append('<div class="log-in ui-widget ui-widget-content ui-corner-all">'+text+'</div>');
+	$("#talks_log").append('<div class="log-in ui-widget ui-widget-content ui-corner-all">'+encode_urls(text)+'</div>');
 	talks_scroll();
 }
 

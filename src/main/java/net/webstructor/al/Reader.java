@@ -23,6 +23,8 @@
  */
 package net.webstructor.al;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -36,6 +38,8 @@ import net.webstructor.core.Mistake;
 import net.webstructor.core.Property;
 import net.webstructor.core.Storager;
 import net.webstructor.core.Thing;
+import net.webstructor.main.Mainer;
+import net.webstructor.main.Tester;
 import net.webstructor.peer.Session;
 import net.webstructor.util.Array;
 import net.webstructor.util.Str;
@@ -546,7 +550,7 @@ public class Reader extends AL {
 		
 		String[] properties = storager.getNames(); 
 		String[] thing_names = storager.getNames(AL.name);
-		boolean negation = parser.parseAny(not,true) != null;
+		boolean negation = parser.parseAny(no,true) != null;
 		//TODO: check opening brackets
 		{
 			ArrayList terms = new ArrayList();
@@ -592,7 +596,7 @@ public class Reader extends AL {
 					String[] scope = head instanceof Thing ? ((Thing)head).getNamesPossible() : properties;
 					scope = Str.concat(scope, session.getBody().getActions());
 //TODO:may need to make sure there is no nulls or empty strings in thing_names but do it in the other place!!!???
-if (!AL.empty(thing_names)){
+/*if (!AL.empty(thing_names)){
 	ArrayList f = new ArrayList();
 	for (int i = 0 ; i < thing_names.length; i++)
 		if (!AL.empty(thing_names[i]))
@@ -600,10 +604,15 @@ if (!AL.empty(thing_names)){
 		else
 			body.error("Reader has no thing name", null);
 	thing_names = (String[])f.toArray(new String[]{});
-}
+}*/
 					Object step = parseExpression(terms,parser,scope,thing_names,storager);					
-					if (step == null)
-						break;
+					if (step == null) {
+						//break;
+						if (parser.parseAny(AL.periods,false) != null || parser.end())// just stop parsing
+							break;
+						else
+							return null;//break on incomplete parsing
+					}
 					terms.add(step);
 					
 				} else {
@@ -650,7 +659,7 @@ if (!AL.empty(thing_names)){
 				
 				//TODO: brackets
 				for (;;) {
-					String negation = parser.parseAny(not,true);
+					String negation = parser.parseAny(no,true);
 					//Object value = parser.parseNotIn(AL.punctuation);//was: single word parsing
 					StringBuilder sb = null;//new StringBuilder();
 					for (;;) {
@@ -678,6 +687,8 @@ if (!AL.empty(thing_names)){
 					if (!AL.empty(scope) && scope.get(scope.size()-1) instanceof Thing) // so it is like "Whet my topics name, trust?"
 						if (storager.isThing(name)) // so it is a reference to a thing
 							if (Array.contains(properties, value)) {
+//TODO: this makes it possible to handle "there is animal, has name, color, size." but makes impossible to deal with "What my news text?"
+							//if (Array.contains(properties, value) && values.size() > 0) {
 								parser.set(value_position);	//rollback to handle value as chained stuff			
 								break;
 							}
@@ -761,5 +772,29 @@ if (!AL.empty(thing_names)){
 			}
 		}//if (items.size() > 0)
 		return step;
+	}
+	public static void main(String args[]) {
+		Tester t = new Tester();
+		t.init();
+		BufferedReader reader = Mainer.getReader("patterns.txt");
+		for (;;) {
+			String line;
+			try {
+				line = reader.readLine();
+				if (AL.empty(line))
+					break;
+			} catch (IOException e) {
+				break;
+			}
+			if (line.charAt(0) != '{')
+				continue;
+	//		Set s;
+			t.assume((Reader.patterns(null,null,line)).toString(),line);
+			t.assume((Reader.patterns(null,null,line)).compact().toString(),line);
+			//s = null;
+		}
+//		t.assume(Reader.patterns(null,null,"{[melissaa \'(\' 49 \')\'] \'#news\' [world \"/]}").toString(),"{[melissaa \'(\' 49 \')\'] \'#news\' [world \"/]}");
+//		t.assume(Reader.patterns(null,null,"{[melissaa \'(\' 49 \')\'] \'#news\' [world \"/] [united states & canada] [topic | united states] \'\' [[world /\" \"  ] europe \']\' [world \'/] [middle east]]").compact().toString(),"{[$nrn (neuron)]}");
+		t.check();
 	}
 }

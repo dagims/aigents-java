@@ -127,8 +127,9 @@ wss://api.golos.blckchnd.com/ws
 wss://denisgolub.name/ws
 wss://api-full.golos.id/ws
 wss://lindsay-golos.cf/ws
-https://api-full.golos.id (OK) - expired certificate!?
+https://api-full.golos.id (OK) - hard rate limits, needs 10 seconds waits, resync takes 8 hours  
 https://api.golos.blckchnd.com (OK)
+https://golos.lexai.host (not tested yet)
 Тут же и размеры блоков можно посмотреть на разных нодах.
 
 Golos Support: 
@@ -140,7 +141,8 @@ https://docs.google.com/document/d/1kms6fmzcUg18-SemUyJU9tRKt-853orXcdb16m1NGTE/
 https://golos.io/ru--golos/@goloscore/novosti-golos-core-status-razrabotki-na-05-02-2018-tekhnicheskie-izmeneniya-informaciya-o-bounty-programme
 Golos API Hosts:
 https://golos.id/nodes
-https://api.golos.blckchnd.com - public, working with new API on 2015-05-15
+https://api-golos.blckchnd.com - public, working with new API on 2020-07-20
+https://api.golos.blckchnd.com - not working with new API on 2020-07-20
 this.goloscore.org - Could not resolve host: this.goloscore.org
 https://ws.golos.io - worked in curl (with cert) - not working on 2015-05-15
 https://ws.golos.io - ask in chat golos.io, 
@@ -148,13 +150,14 @@ https://api.golos.cf - worked in curl (with cert) - not working on 2015-05-15
 https://api.golos.cf - ask @vikxx on Telegram 
 wss://ws17.golos.io/ - not working on 2015-05-15
 Golos Working:
-curl --data '{"jsonrpc":"2.0","id":"25","method":"call","params": ["account_history","get_account_history",["akolonin","-1","1000"]]}' https://api.golos.blckchnd.com
 curl --data '{"jsonrpc":"2.0","id":"25","method":"call","params": ["account_history","get_account_history",["akolonin","-1","1000"]]}' https://api-full.golos.id
+curl --data '{"jsonrpc":"2.0","id":"25","method":"call","params": ["account_history","get_account_history",["akolonin","-1","1000"]]}' https://api-golos.blckchnd.com
 curl --data '{"jsonrpc":"2.0","id":"25","method":"call","params": ["database_api","get_block",["33119661"]]}' https://api.golos.blckchnd.com/
 curl --data '{"jsonrpc":"2.0","id":"25","method":"call","params": ["database_api","get_block",["33119661"]]}' https://api-full.golos.id
 curl --data '{"jsonrpc":"2.0","id":"25","method":"call","params": ["database_api","get_dynamic_global_properties",[]]}' https://api-full.golos.id
 
 Golos Not Working:
+curl --data '{"jsonrpc":"2.0","id":"25","method":"call","params": ["account_history","get_account_history",["akolonin","-1","1000"]]}' https://api-full.golos.id
 curl --data '{"jsonrpc":"2.0","id":"25","method":"get_account_history","params": ["akolonin","-1","1000"]}' https://api.golos.cf
 curl --data '{"jsonrpc":"2.0","id":"25","method":"get_account_history","params": ["akolonin","-1","1000"]}' https://ws.golos.io
 
@@ -235,11 +238,12 @@ public class Steemit extends SocialCacher {
 	//- keeping registry of "already spidered at date" accounts
 	//- keep "latest daily timestamp" per peer to prevent redundancy
 	protected static void resync(String name, Steemit api, Environment env, LangPack lp, GraphCacher gc, Set peers, Date since, Date until, String[] areas, int range, long timeout) {
+		String caps_name = Writer.capitalize(name);
 		if (AL.empty(peers))
 			return;
 		
 		long start = System.currentTimeMillis();
-		env.debug("Steemit resyncing "+name+" start "+new Date(start)+".");
+		env.debug(caps_name+" resyncing "+name+" start "+new Date(start)+".");
 		
 		gc.setAge(start);
 		
@@ -267,7 +271,7 @@ public class Steemit extends SocialCacher {
 				
 //TODO: make sure the peer id is not present in every daily graphs, unless it has to be fresh!?
 				
-				env.debug("Steemit crawling "+name+" user "+id);
+				env.debug(caps_name+" crawling "+name+" user "+id);
 				try {
 					//get feed (yearly period since postProcessPosts is overridden)
 					SteemitGraphFeeder feeder = new SteemitGraphFeeder(gc,env,api,id,lp,since,until,areas,365);
@@ -288,7 +292,7 @@ public class Steemit extends SocialCacher {
 				} catch (IOException e) {
 					env.error("Steemit resyncing error "+name, e);
 				}
-				env.debug("Steemit spidered "+name+" user "+id);
+				env.debug(caps_name+" spidered "+name+" user "+id);
 				//add name to processed list
 				done.add(id);
 			}
@@ -301,23 +305,26 @@ public class Steemit extends SocialCacher {
 		gc.saveGraphs();
 		
     	long end = System.currentTimeMillis();
-		env.debug("Steemit resyncing "+name+" end "+new Date(end)+", count "+count+", took "+Period.toHours(end-start)+", peer "+Period.toHours((end-start)/count)+".");
+		env.debug(caps_name+" resyncing "+name+" end "+new Date(end)+", count "+count+", took "+Period.toHours(end-start)+", peer "+Period.toHours((end-start)/count)+".");
 	}
 	
-	public static String retryPost(Environment env,String api_url,String par) throws Exception{
+	public static String retryPost(Environment env,String api_url,String par) throws Throwable {
+		return retryPost(env, api_url, par, 100L);
+	}
+	public static String retryPost(Environment env,String api_url,String par, long pause) throws Throwable {
 		String response = null;
 		for (int retry = 1; retry <= 10; retry++){
 			response = HTTP.simple(api_url,par,"POST",0);
 			if (response.startsWith("<html>")){
-				env.error("Steemit response "+response+" on "+par,null);
-				Thread.sleep(100 * retry);
+				env.error("Steemit response "+api_url+" "+par+" "+response,null);
+				Thread.sleep(pause * retry);
 			} else 
 				break;
 		}
 		return response;
 	}
 	
-	public static long headBlock(Environment env, String api_url,String api_name) throws Exception {
+	public static long headBlock(Environment env, String api_url,String api_name) throws Throwable {
 		String par = "steemit".equals(api_name) ? 
 				"{\"jsonrpc\":\"2.0\",\"id\":\"25\",\"method\":\"get_dynamic_global_properties\",\"params\": []}"//Steemit
 				:"{\"jsonrpc\":\"2.0\",\"id\":\"25\",\"method\":\"call\",\"params\": [\"database_api\",\"get_dynamic_global_properties\",[]]}";//Golos
@@ -357,7 +364,7 @@ public class Steemit extends SocialCacher {
 			*/
 			
 			cacher.saveGraphs();
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			// TODO Auto-generated catch block
 			body.error(Writer.capitalize(name)+" crawling error",e);
 		}
@@ -368,7 +375,7 @@ public class Steemit extends SocialCacher {
 		return new Profiler(body,this,peer, name()+" id");
 	}
 
-	public static void blockSpider(Steemit api, Environment env, String api_name, String api_url, long start_block, boolean debug) throws Exception {
+	public static void blockSpider(Steemit api, Environment env, String api_name, String api_url, long start_block, boolean debug) throws Throwable {
 		String caps_name = Writer.capitalize(api_name);
 
 //get cacher from env!!!
@@ -385,6 +392,7 @@ public class Steemit extends SocialCacher {
 		Graph graph = null;
 		boolean pending_update = false;
 		long head = start_block > 0 ? start_block : headBlock(env, api_url, api_name);
+		long pause = "golos".equals(api_name) ? 1000 : 100;
 
 		long start = System.currentTimeMillis(); 
 		env.debug(caps_name+" crawling start");// since "+since+" until "+until);
@@ -419,7 +427,7 @@ public class Steemit extends SocialCacher {
 			try {
 				if (debug)
 					env.debug(Writer.capitalize(api_name)+" request "+api_url+" "+par);
-				response = retryPost(env, api_url, par);
+				response = retryPost(env, api_url, par, pause);
 				JsonReader res = Json.createReader(new StringReader(response));
 				JsonObject obj = res.readObject();
 				JsonObject result = JSON.getJsonObject(obj, "result");
@@ -480,6 +488,12 @@ if (block % 10 == 0){
 							env.debug(caps_name+" crawling block "+block+" at "+timestamp+" transaction "+t+" operation "+o+" type "+type);
 						JsonObject args = operation.getJsonObject(1);
 						if (type.equals("claim_reward_balance") ||
+							type.equals("donate") ||//TODO!: Golos:["donate",{"from":"prizm","to":"id-ogon-sochi","amount":"1000.000 GOLOS","memo":{"app":"golos-id","version":1,"target":{"author":"id-ogon-sochi","permlink":"est-predlozhenie"},"comment":""},"extensions":[]}]
+							type.equals("claim") ||//TODO?: Golos:["claim",{"from":"sci-cards","to":"ksantoprotein","amount":"0.036 GOLOS","to_vesting":false,"extensions":[]}]
+							type.equals("transfer_from_tip") ||//Golos:["transfer_to_tip",{"from":"now","to":"now","amount":"16.500 GOLOS","memo":"","extensions":[]}]
+							type.equals("transfer_to_tip") ||//Golos:["transfer_from_tip",{"from":"lex","to":"lex","amount":"9764.987 GOLOS","memo":"","extensions":[]}]
+							type.equals("update_proposal_votes") ||//Steemit:["update_proposal_votes",{"voter":"kottalam","proposal_ids":[0],"approve":true,"extensions":[]}]
+							type.equals("account_update2") ||//Steemit:["account_update2",{"account":"olivepainting","json_metadata":"","posting_json_metadata":"{\"profile\":{\"name\":\"OlivePainting\",\"website\":\"https://www.instagram.com/olive_painting/\",\"version\":2}}","extensions":[]}]
 							type.equals("delete_comment") || //TODO: later!?
 							type.equals("comment_options") || //TODO: later!?
 							type.equals("custom_json") || //TODO: follows!?
@@ -636,8 +650,8 @@ if (block % 10 == 0){
 				}//transactions
 			}//graph
 //TODO:indent			
-			} catch (Exception e) {
-				env.error(caps_name+" crawling error "+response,e);
+			} catch (Throwable e) {
+				env.error(caps_name+" crawling error "+api_url+" "+par+" "+response,e);
 			}
 			
 		}//blocks
@@ -737,13 +751,16 @@ if (block % 10 == 0){
 			*/
 			
 			//https://api-full.golos.id (OK)//5.829696165440641 blocks/minute at 38 blocks 
-			String url = "steemit".equals(name) ? "https://api.steemit.com" : "https://api-full.golos.id";
+			String url = "steemit".equals(name) ? "https://api.steemit.com" : 
+				//"https://api-full.golos.id";
+				"https://api-golos.blckchnd.com";
+				//"https://golos.lexai.host";
 			//https://api.golos.blckchnd.com (OK)//5.535906504690143 blocks/minute
 			//String url = "steemit".equals(name) ? "https://api.steemit.com" : "https://api.golos.blckchnd.com";
 			HTTP.init();
 			//optional input - block number
 			blockSpider(null,new Mainer(),name,url, args.length > 1 ? Long.parseLong(args[1]) : -1 , false);
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

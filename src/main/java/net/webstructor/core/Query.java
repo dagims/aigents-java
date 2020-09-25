@@ -95,13 +95,6 @@ public class Query
 	
 	private Thing clone(Thing source, String[] args,Thing viewer,boolean think){
 		Thing clone = source.clone(args,viewer);
-		/*//obfuscate hidden attributes
-		if (!root && !(source.equals(viewer) || source.hasThing(AL.is, viewer)) && Peer.registered(source)) {
-			for (String hidden : Schema.hidden) {
-				if (!AL.empty(clone.getString(hidden)))
-					clone.setString(hidden, "****************");//TODO configure properly
-			}
-		}*/
 		obfuscate(source, clone, args, viewer);
 		if (think && thinker != null)
 			thinker.think(source, clone, args, viewer);
@@ -197,39 +190,12 @@ public class Query
 				if (chain instanceof String)
 					chain = new String[]{(String)chain};				
 				current = getCurrent(query,i,current,(String[])chain,viewer);
-				/*
-				String[] args = (String[])chain;
-				if (current instanceof Thing) {
-					if (!accessible((Thing)current,viewer,args,false))
-						throw new Mistake(Mistake.no_right);
-					if (args.length == 1 && storager.isThing(args[0]) 
-						&& i+1 < query.size() && query.get(i+1) instanceof String[])
-						//if taking single thing and its one property as thing followed by thing's properties: 
-						current = ((Thing)current).get(args[0]);
-					else
-						//TODO: enable plain name listing
-						current = ((Thing)current).clone(args,viewer);
-				} else
-				if (current instanceof Collection) {
-					//extract values from each of the currents 	
-					HashSet set = new HashSet(((Collection)current).size());
-					Iterator it = ((Collection)current).iterator();
-					while (it.hasNext()) {
-						Thing t = (Thing)it.next();					
-						if (!accessible(t,viewer,args,false))//skipping not accessibles
-							continue;
-						Thing clone = t.clone(args,viewer);
-						if (clone != null)
-							set.add(clone);
-					}
-					current = set;
-				}
-				*/
 			}
 		}
 		if (current != null && !(current instanceof Collection)) {
-			HashSet set = new HashSet(1);
-			set.add(current);
+			HashSet set = new HashSet();
+			if (!(current instanceof Thing && ((Thing)current).empty()))
+				set.add(current);
 			current = set;
 		}			
 		return (Collection)current;
@@ -455,7 +421,7 @@ public class Query
 	/**
 	 * Linkable/reversibel attributes that don't require real writing
 	 */
-	boolean writeable(String args[]) {
+	static boolean writeable(String args[]) {
 		if (!AL.empty(args)){
 			int count = 0;
 			for (int i = 0; i < args.length; i++)
@@ -469,7 +435,7 @@ public class Query
 	/**
 	 * Any keys and linkable/reversible attributes.
 	 */
-	boolean readable(String args[]) {
+	static boolean readable(String args[]) {
 		if (!AL.empty(args)){
 			int count = 0;
 			for (int i = 0; i < args.length; i++)
@@ -486,7 +452,7 @@ public class Query
 	 * @param stack - check for recursion
 	 * @return
 	 */
-	boolean registered(Thing thing,java.util.Set stack){//TODO make generic with validator interface
+	static boolean registered(Thing thing,java.util.Set stack){//TODO make generic with validator interface
 		if (Peer.registered(thing))
 			return true;
 		if (stack == null)
@@ -509,6 +475,9 @@ public class Query
 	// - self body, unless trusted 
 	// - peers with authorization setup, unless trusted
 	boolean accessible(Thing thing, Thing peer, String args[], boolean write) {
+		return accessible(thing, self, peer, args, write);
+	}
+	public static boolean accessible(Thing thing, Thing self, Thing peer, String args[], boolean write) {
 		boolean readable = readable(args);
 		if (write == false && readable)
 			return true;

@@ -24,10 +24,12 @@
 package net.webstructor.data;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import net.webstructor.al.AL;
 import net.webstructor.al.Parser;
 import net.webstructor.al.Seq;
+import net.webstructor.al.Set;
 import net.webstructor.core.Environment;
 import net.webstructor.main.Mainer;
 import net.webstructor.util.Array;
@@ -42,6 +44,7 @@ public class LangPack {
 	private Counter words = null; 
 	private Counter positives = null; 
 	private Counter negatives = null; 
+	private HashSet<Character> chars = new HashSet<Character>();
 	
 	public LangPack(Environment env){
 		
@@ -66,14 +69,14 @@ public class LangPack {
 					"чо", "если", "нас", "нам", "нами", "какие", "каких"
 					}),
 			new Lang("en","english","aeiou","bcdfghjklmnpqrstvwxyz","-",new String[]{
-					"-", "&","a", "an", "and", "or", "the", "in", "on", "at", "it", "is", "are", "me",
+					"-", "&","a", "an", "and", "because", "else", "or", "the", "in", "on", "at", "it", "is", "after", "are", "me",
 					"am", "i", "into", "its", "same", "with", "if", "most", "so", "thus", "hence", "how",
-					"as", "do", "what", "for", "to", "of", "be", "will", "was", "were", "here", "there",
+					"as", "do", "what", "for", "to", "of", "over", "be", "will", "was", "were", "here", "there",
 					"you", "your", "our", "my", "her", "his", "just", "have", "but", "not", "that",
-					"their", "we", "by", "any", "some", "dont", "do", "does", "of", "they", "them",
+					"their", "we", "by", "any", "anything", "some", "something", "dont", "do", "does", "of", "they", "them",
 					"been", "even", "etc", "this", "that", "those", "these", "from", "he", "she",
-					"no", "yes", "own", "mine", "me", "each", "can", "could", "would", "should", "had", "has",
-					"when", "out", "also", "only", "about", "us", "via", "then", "who"
+					"no", "yes", "own", "may", "mine", "me", "each", "can", "could", "would", "should", "since", "had", "has",
+					"when", "out", "also", "only", "about", "us", "via", "than", "then", "up", "who", "which"
 					})};
 		loadLexicon(env);
 	}
@@ -86,12 +89,20 @@ public class LangPack {
 		return words;
 	}
 	
-	public Lang get(String name){
+	public java.util.Set chars(){
+		return chars;
+	}
+	
+	public String getName(String name){
 		if (AL.empty(name))
 			return null;
-		for (int i = 0; i < langs.length; i++)
-			if (langs[i].prefix.contentEquals(name) || langs[i].prefix.contentEquals(name))
-				return langs[i];
+		//for (int i = 0; i < langs.length; i++)//try by full name
+		//	if (langs[i].prefix.contentEquals(name))
+		//		return langs[i].name;
+		name = name.toLowerCase();
+		for (int i = 0; i < langs.length; i++)//try by prefix
+			if (name.startsWith(langs[i].prefix))
+				return langs[i].name;
 		return null;
 	}
 	
@@ -109,6 +120,25 @@ public class LangPack {
 		return counter;
 	}
 
+	void setChars(String chars) {
+		for (int i = 0 ; i < chars.length(); i++)
+			this.chars.add(chars.charAt(i));
+	}
+	
+	boolean validChars(String chars) {
+		//TODO checke languages individually!?
+		for (int i = 0 ; i < chars.length(); i++)
+			if (!this.chars.contains(chars.charAt(i)))
+					return false;
+		return true;
+	}
+	
+	public boolean validWord(String word) {
+		if (words.containsKey(word))
+			return true;
+		return validChars(word);
+	}
+	
 	void loadLexicon(Environment env){
 		for (int l = 0; l < langs.length; l++){
 			/*
@@ -125,6 +155,9 @@ public class LangPack {
 			words = loadCounter(env, words, "lexicon", langs[l].name);
 			positives = loadCounter(env, positives, "lexicon_positive", langs[l].name);
 			negatives = loadCounter(env, negatives, "lexicon_negative", langs[l].name);
+			setChars(langs[l].vowels);
+			setChars(langs[l].consonants);
+			setChars(langs[l].spec);
 		}
 	}
 	
@@ -189,7 +222,54 @@ public class LangPack {
 		}
 		return trim(sb.toString());
 	}
+
+	public static boolean excluded(String word, int min, LangPack languages) {
+		if (word.length() < min)
+			return true;
+		/*if (exclusions != null && exclusions.contains(word))
+			return true;*/
+		if (languages != null && languages.scrub(word))
+			return true;
+		return false;
+	}
 	
+	public static void countWords(LangPack languages, Linker linker, String text, java.util.Set vocabulary) {
+		countWords(languages, linker, text, vocabulary, 2, false);
+	}
+	
+	public static void countWords(LangPack languages, Linker linker, String text, java.util.Set vocabulary, int min, boolean number) {
+		//Set tokens = Parser.parse(text,AL.punctuation+AL.spaces,false,true,false,true);//no quoting
+		Set tokens = Parser.parse(text,AL.punctuation+AL.spaces,false,true,true,true);//quoting
+		if (tokens != null) {
+			for (int j = 0; j < tokens.size(); j++){
+				String token = (String)tokens.get(j); 
+				if (AL.isURL(token))
+					continue;
+			
+				String word;
+				if (languages == null)
+					word = token;
+				else {
+					word = languages.lowertrim(token);
+					if (AL.empty(word)) try {
+						Integer.parseInt(token);
+						word = token;
+					} catch (NumberFormatException e) {}
+				}
+				
+				//TODO: use real freqs for scrubs, because some of them may be used in patterns
+				if (vocabulary != null){//inclusion based on "best words"
+					if (!vocabulary.contains(word))
+						continue;
+				} else {//inclusion based on "scrub list" fo exclusions
+					if (excluded(word,min,languages))
+						continue;
+				}
+				linker.count(word);
+			}
+		}
+	}
+
 	String buildNGram(Seq seq, int pos, int n) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < n; i++) {
@@ -218,6 +298,8 @@ public class LangPack {
 	boolean sentiment_logarithmic = false;
 	boolean sentiment_maximized = true;
 	public int[] sentiment(String input, ArrayList pc, ArrayList nc) {
+		if (AL.empty(input) || AL.empty(positives) || AL.empty(negatives))
+			return new int[] {0,0,0};
 		Seq seq = Parser.parse(input);
 		double p = 0;
 		double n = 0;

@@ -1,7 +1,7 @@
 /*
  * MIT License
  * 
- * Copyright (c) 2005-2019 by Anton Kolonin, Aigents
+ * Copyright (c) 2005-2020 by Anton Kolonin, Aigents®
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -72,6 +72,7 @@ class Email {
 
 //TODO: split into JavaEmailer and LinuxEmailer
 public class Emailer extends Communicator implements Updater {
+	public static final String DEFAULT_EMAIL = "replace@this.email";
 	public static final String DEFAULT_PASSWORD = "replace this with proper password";
 	private static final long DEFAULT_EMAIL_CYCLE_MS = 60*Period.MINUTE;
 	private static final long MINIMUM_EMAIL_CYCLE_MS = 1*Period.MINUTE;
@@ -445,8 +446,9 @@ public class Emailer extends Communicator implements Updater {
 	public boolean notifyable(Thing peer) {
 		return peer.getBoolean(Peer.email_notification);
 	}	
-	
-	public boolean update(Thing peer, String subject, String content, String signature) throws IOException{
+
+	@Override
+	public boolean update(Thing peer, String sessionKey, String subject, String content, String signature) throws IOException{
 		String email = peer.getString(AL.email);
 		if (!AL.empty(email) && !Body.testEmail(email) && Emailer.valid(email)) {
 			if (notifyable(peer)){

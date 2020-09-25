@@ -25,7 +25,7 @@
 
 include_once("pest.php");
 
-$version = "2.8.7";
+$version = "3.0.7";
 $copyright = " Copyright © 2020 Anton Kolonin, Aigents®.";
 
 $baseURL = "http://localhost:1180/?";
@@ -33,7 +33,7 @@ $baseURL = "http://localhost:1180/?";
 $basePath = "./";
 
 $timeout = 7;
-$base_things_count = 132;
+$base_things_count = 134;
 
 $cookie;
 
@@ -103,7 +103,7 @@ function curl_test($url) {
 	CURLOPT_URL => $url,
 	CURLOPT_HEADER => 1,
 	CURLOPT_VERBOSE => 1,
-	CURLOPT_TIMEOUT => 60,
+	CURLOPT_TIMEOUT => 120,//60
 	CURLOPT_CONNECTIONTIMEOUT => 60,	
 	CURLOPT_USERAGENT => 'Codular Sample cURL Request'	
 	));
@@ -249,11 +249,13 @@ function del_news_today($when = "today"){
 	say("No there times ".$when.".");
 }
 
-function login($name = "john", $email = "john@doe.org", $surname = "doe", $question = "q", $answer = "a"){
+function login($name = "john", $email = "john@doe.org", $surname = "doe", $question = "q", $answer = "a", $reg = true){
 	global $version, $copyright;
 	say("My name ".$name.", email ".$email.", surname ".$surname.".");
-	get("What your secret question, secret answer?");
-	say("My secret question ".$question.", secret answer ".$answer.".");
+	if ($reg){
+		get("What your secret question, secret answer?");
+		say("My secret question ".$question.", secret answer ".$answer.".");
+	}
 	get("What your ".$question."?");
 	say("My ".$question." ".$answer.".");
 	get("Ok. Hello ".ucwords($name)." ".ucwords($surname)."!\nMy Aigents " . $version . $copyright);
@@ -267,7 +269,7 @@ function logout($name = "john",$strict = true){
 	say("No there times today.");
 	get($strict ? "Ok." : null);
 	say("What times today?");
-	get($strict ? "There not." : null);
+	get($strict ? "No." : null);
 	say("My logout.");
 	get("Ok.");
 }

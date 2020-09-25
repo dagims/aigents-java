@@ -100,8 +100,9 @@ public class Peer extends Agent {
 		language,
 		login_count,login_token,login_time,registration_time,activity_time,
 		paid_term,
-//TODO: make format per-session property (or make AL clients to understand JSON)!!!
+//TODO: make format and conversation per-session property (or make AL clients to understand JSON)!!!
 		AL.format,
+		AL.conversation,
 		AL.currency,
 		//AL.format,//TODO: fix unit test in agent_sites.php (not trivial!)?
 		Body.facebook_id, Body.facebook_token,
@@ -204,7 +205,7 @@ public class Peer extends Agent {
 				session.sessioner.body.debug("Populating content to "+thisPeer);
 				Thing areaPeer = session.getAreaPeer();
 				if (areaPeer != null){
-					session.sessioner.body.debug("Populating content from "+areaPeer.getName());
+					session.sessioner.body.debug("Populating content from "+areaPeer.name());
 					areaPeer.copyTo(thisPeer,new String[]{AL.topics,AL.sites,AL.news},null,true);
 				}else {
 					//otherwise populate with default data
@@ -234,8 +235,11 @@ public class Peer extends Agent {
 				//set the self email same as email as first owner
 				if (!testPeer) //TODO: why so? just to make tests passing?
 					if (AL.empty(self.getString(AL.email)) && AL.empty(self.getString(Body.email_login))) {
-						self.setString(AL.email,thisPeer.getString(AL.email));
-						self.setString(Body.email_login,thisPeer.getString(AL.email));
+						//using peer email for self email breaks email uniqueness!
+						//self.setString(AL.email,thisPeer.getString(AL.email));
+						//self.setString(Body.email_login,thisPeer.getString(AL.email));
+						self.setString(AL.email,Emailer.DEFAULT_EMAIL);
+						self.setString(Body.email_login,Emailer.DEFAULT_EMAIL);
 					}
 			}
 		}
@@ -290,8 +294,7 @@ public class Peer extends Agent {
 		ArrayList dels = new ArrayList();
 		Date today = Time.today(0);
 		int days = body.attentionDays();
-		//Date yesterday = Time.today(-1);
-		for (Iterator it = allNews.iterator(); it.hasNext();){
+		if (!AL.empty(trusts)) for (Iterator it = allNews.iterator(); it.hasNext();){
 			Thing t = (Thing)it.next();
 			Date day = t.getDate(AL.times,null);
 			int daysdiff = Period.daysdiff(day, today);

@@ -34,6 +34,7 @@ import net.webstructor.core.Property;
 import net.webstructor.core.Storager;
 import net.webstructor.core.Thing;
 import net.webstructor.core.Updater;
+import net.webstructor.data.Emotioner;
 import net.webstructor.util.Str;
 import net.webstructor.agent.Body;
 import net.webstructor.agent.Schema;
@@ -48,30 +49,33 @@ public class Session  {
 	Thing peer = null;
 	Thing session = null;//specific session context of the peer - peer's sub-personality
 	Communicator communicator;
-	Mode mode = null;
+	Responser responser = null;
 	String key;
 	String type;
-	int mood = AL.declaration;
-	int fails = 0;
+	transient int mood = AL.declaration;
+	transient int fails = 0;
+	transient Statement query = null;
 
+	public String language = null;
+	
 	private boolean authenticated = false;
 	
-	//private ArrayList messages = new ArrayList();
 	private String input = null;//raw input
 	private String args[] = null;//pre-parsed input
 	private String output = null;
 	
 	private StringBuilder outputs = new StringBuilder();//TODO: use it to replace String output
 
-	//protected HashMap expected = new HashMap();
 	private String[] expected = null;
 
+	transient private HashMap<String,Object> contexts = new HashMap<String,Object>();//keep handler-specific contexts
+	
 	public Session(Sessioner sessioner,Communicator communicator,String type,String key) {
 		this.sessioner = sessioner;
 		this.communicator = communicator;
 		this.type = type;
 		this.key = key;
-		this.mode = new Conversation();
+		this.responser = sessioner.body.getResponser();
 		this.reader = new Reader(sessioner.body);
 		//this.writer = new Writer(sessioner.body);
 	}
@@ -98,8 +102,19 @@ public class Session  {
 		this.peer = null;
 		this.session = null;
 		this.authenticated = false;
+		contexts.clear();
 	}
-	
+
+	public Object context(String name){
+		return contexts.get(name);
+	}
+
+	public void context(String name, Object context){
+		if (context == null)
+			contexts.remove(name);
+		contexts.put(name, context);
+	}
+
 	public void expect(String[] expected){
 		this.expected = expected;
 	}
@@ -128,6 +143,13 @@ public class Session  {
 		this.output = output;
 	}
 	
+	public void outputWithEmotions(String output){
+		String emotion = Emotioner.emotion(getBody().languages.sentiment(input()));//emotions on input?
+		if (AL.empty(emotion))//no emotions on input - provide emotions on output?
+			emotion = Emotioner.emotion(getBody().languages.sentiment(output));
+		this.output = !AL.empty(emotion) ? output + "\n" + emotion : output;
+	}
+	
 	public void addOutput(String output){
 		this.output += output;
 	}
@@ -135,6 +157,26 @@ public class Session  {
 	public String output(){
 		return output;
 	}
+	
+	//TODO: move out of session and apply translation!?
+	public String no(){
+		return Writer.capitalize(AL.no[0])+".";
+	}
+
+	public String ok(){
+		return Writer.capitalize(AL.ok[0])+".";
+	}
+
+	public String so(){
+		return Writer.capitalize(getBody().translator(language()).loc("so what"))+"?";
+	}
+
+	public String language(){
+		String lang = getStoredPeer().getString(Peer.language);
+//TODO make rather session language override use language in session.getLanguage()?
+		return !AL.empty(lang) ? lang : this.language;
+	}
+	
 	
 	public void unexpect(Thing context){
 		if (peer != null && !AL.empty(expected)){
@@ -152,18 +194,16 @@ public class Session  {
 		authenticated = false;
 	}
 	
-	String format(){
-//TODO make format a session property
-		String format = null;
+	public String getString(String name) {
+		String value = null;
 		if (peer != null)
-			format = peer.getString(AL.format);
-		if (AL.empty(format)) {
+			value = peer.getString(name);
+		if (AL.empty(value)) {
 			Thing p = getStoredPeer();
 			if (p != null)
-				format = p.getString(AL.format);
-			//TODO: Mode.getSessionAreaPeer(this)?
+				value = p.getString(name);
 		}
-		return format;
+		return value;
 	}
 	
 	public Thing getPeer() {
@@ -268,6 +308,10 @@ public class Session  {
 	}
 
 	protected void comprehend(String input) {
+		if (input.startsWith("/"))//eliminate the leading slash for the case when it is a Telegram/Slack bot command
+			input = input.substring(1);
+		if (input.startsWith("my_") || input.startsWith("what_"))//hack for Telegram/Slack bot command
+			input = input.replaceAll("_", " ");
 		this.mood = reader.readMood(input);
 		this.input = input; 
 		//this.args = Parser.split(this.input, " \t,;");//"compile it"
@@ -367,7 +411,7 @@ public class Session  {
 		sessioner.body.updateStatus(peer,null);//spawn status update process here asynchronously
 		authenticated = true;
 
-		return "Ok. Hello "+peer.getTitle(Peer.title)+"!"+"\nMy "+Body.notice();
+		return this.ok()+" Hello "+peer.getTitle(Peer.title)+"!"+"\nMy "+Body.notice();
 	}
 
 	protected void updateRegistration() {
@@ -388,7 +432,7 @@ public class Session  {
 	public void login(String provider, Thing storedPeer) {
 		Session session = this;
 		session.sessioner.body.debug(provider+" auto-log: "+storedPeer);
-		session.mode = new Conversation();
+		session.responser = session.sessioner.body.getResponser();
 		session.peer = new Thing(storedPeer,null);
 		session.output = session.welcome();
 	}
@@ -402,7 +446,7 @@ public class Session  {
 			Peer.populateContent(session,Body.testEmail(email));
 			session.updateRegistration();
 		} catch (Exception e) {
-			session.output += " " + Mode.statement(e);
+			session.output += " " + Responser.statement(e);
 			session.sessioner.body.error(provider+" error: "+e.toString(), e);
 		}
 	}
@@ -412,14 +456,14 @@ public class Session  {
 		try {
 			Collection owners = session.sessioner.body.storager.getByName(idname,idvalue);
 			if (!AL.empty(owners) && (owners.size()>1 || !idvalue.equals(session.getStoredPeer().getString(idname,null))))
-				return Writer.capitalize(idname+" "+idvalue+" is owned.");
+				return session.no() + " " + Writer.capitalize(idname+" "+idvalue+" is owned.");
 		}catch(Exception e){
 			session.sessioner.body.error("Social bind",e);
 			return e.getMessage();
 		}			
 		session.getStoredPeer().set(idname, idvalue);
 		session.getStoredPeer().set(tokenname, tokenvalue);
-		return "Ok.";
+		return session.ok();
 	}
 
 	//bindNonAutheticated
@@ -540,7 +584,7 @@ public class Session  {
  		    	} else {
  		    		if (communicator instanceof Updater) {//async delivery
  		    			try {
-							((Updater)communicator).update(getStoredPeer(), null, output(), null);
+							((Updater)communicator).update(getStoredPeer(), this.key, null, output(), null);
 						} catch (IOException e) {
 							sessioner.body.error(Writer.capitalize(name)+" update", e);
 						}

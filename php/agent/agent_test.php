@@ -52,10 +52,15 @@ function test_once() {
 	test_agent_cat();
 	
 	//test free-text chat capabilities
+	test_findchat();
+	test_demochat();
+	test_freechat();
 	test_help();
-	test_search();
 	test_chat();
 	test_groups();
+	test_search();
+	test_bot();
+	test_load();
 	
 	//test adaptive learning capabilities
 	test_agent_learn();

@@ -92,6 +92,7 @@ public class AL {
 	public final static String abstraction = "abstraction";
 	public final static String version  = "version";
 	public final static String format   = "format";
+	public final static String conversation   = "conversation";
 	public final static String context  = "context";
 	public final static String reputation = "reputation";//global reputaion
 	public final static String title  = "title";
@@ -109,6 +110,7 @@ public class AL {
 	public final static String time 	= "time";//date and daytime
 	public final static String word 	= "word";//single token
 	public final static String email 	= "email";//email address
+	public final static String address 	= "address";//physical address
 	
 	public final static String[] foundation = new String[]{	//TODO have this in Schema, not here and in Thing
 		id,name,is,has,does,times,trust,trusts,ignores,share,shares,friend,friends,_new,news,things,topics,sites,areas,sources,patterns,responses,text
@@ -122,15 +124,15 @@ public class AL {
 	public final static String[] doo  	= new String[] {"do"};
 	//TODO: decide what to do with true/false if appears as property value and breaks parsing as negation
 	//public final static String[] not  	= new String[] {"not","no","false","~"};
-	public final static String[] not  	= new String[] {"not","no","~"};
-	public final static String[] yes  	= new String[] {"ok","yes","true"};
+	public final static String[] no  	= new String[] {"no","not","~"};
+	public final static String[] ok  	= new String[] {"ok","yes","true"};
 	public final static String[] i_my 	= new String[] {"my","i","we","our","me"};	
 	public final static String[] you  	= new String[] {"your","you"};
 	public final static String[] there	= new String[] {"there","it","here","this","that","a","the"};
 	
 	public final static String[] lister = new String[] {",",";","and","or"};//TODO: have either AL.lister or AL.commas!
 	
-	public final static String[][] grammar = new String[][]{what,iff,doo,not,yes,i_my,you,there,lister};
+	public final static String[][] grammar = new String[][]{what,iff,doo,no,ok,i_my,you,there,lister};
 	
 	public static final String period = ".";
 	public static final String space = " ";
@@ -140,6 +142,7 @@ public class AL {
 	public static final String brackets = brackets_open + brackets_close;
 	public static final String commas = ",;";//TODO: union with 'separators' below
 	public static final String periods = ".!?";
+	public static final String delimiters = commas+periods;
 	public static final String negation = "~";
 	public static final String punctuation = brackets + commas + periods + negation;
 	public static final String separators = ".,:";//like decimal separators inside a word or colon in time
@@ -233,6 +236,10 @@ public class AL {
     	}
 	}
 
+	public static String toString(Object o) {
+		return o == null || o instanceof String ? (String)o : o.toString(); 
+	}
+	
 	public Storager getStorager() {
 		return body.storager;
 	}
