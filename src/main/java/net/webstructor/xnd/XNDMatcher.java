@@ -149,7 +149,10 @@ public class XNDMatcher extends Matcher{
         	List<String> ordered = new ArrayList<String>();
         	List<String> original=TextRankSummary.spiltSentence(ex_t);                
         	List<String> unordered=TextRankSummary.getTopSentenceList(ex_t, 10);
-        	for (String s : original){
+        	if(unordered.size()<3){
+				return summary;
+			}
+			for (String s : original){
             		for (String s1 : unordered){
                 		if (s1.equals(s)){
                     			ordered.add(s1);
@@ -161,6 +164,11 @@ public class XNDMatcher extends Matcher{
 				summary += s+" ";
 
         		}
+		
+			if(summary.length()<300){
+				summary="";
+				return summary;
+			}
 		duration = System.nanoTime() - st_time;
 		return summary;
 	}
