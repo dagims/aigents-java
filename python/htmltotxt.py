@@ -40,7 +40,7 @@ def main(args):
         classes+=soup.find_all(class_=re.compile(class_name))
 
     for cont in classes:
-        rm.append(cont.p)
+        rm+=cont.find_all("p")
 
 
 
@@ -57,7 +57,6 @@ def main(args):
             summary+=temp
             summary=summary.replace("\n"," ")
 
-	
     print(summary.encode('utf-8'))
 if __name__ == "__main__":
     main(sys.argv[1:])
