@@ -13,27 +13,35 @@ def main(args):
     soup = BeautifulSoup(req.text, "html.parser")
     summary=""		
     rm=[]
-    class_names=["header", "footer", "nav", "aside", "side", "menu", "layout","caption","figure"]
+    class_names=["header", "footer", "nav", "aside", "menu", "layout","caption","figure"]
     classes=[]    
-    try:
-        soup.footer.decompose()
-    except:
-        pass
+    
+    for i in range(7):
+        try:
+            soup.footer.decompose()
+        except:
+            pass
 
-    try:
-        soup.header.decompose() 
-    except:
-        pass
+        try:
+            soup.header.decompose() 
+        except:
+            pass
     
-    try:
-        soup.nav.decompose()
-    except:
-        pass
+        try:
+            soup.nav.decompose()
+        except:
+            pass
     
-    try:
-        soup.aside.decompose()
-    except:
-        pass
+        try:
+            soup.aside.decompose()
+        except:
+            pass
+
+        try:
+            soup.figure.decompose()
+        except:
+            pass
+
 
 
     for class_name in class_names:
@@ -43,9 +51,20 @@ def main(args):
         rm+=cont.find_all("p")
 
 
-
+    pclass=""
+    temp2=0
     for cont in soup.find_all("p"):
-        if cont not in rm:
+        temp2=0
+        try:
+            pclass=cont['class']
+            pclass=pclass[0]
+            for class_name in class_names:
+                if class_name in pclass:
+                    temp2=1
+                    break    
+        except:
+            pass
+        if cont not in rm and temp2==0:
             temp=cont.text
             try:
                 if temp[-1]!=".":
@@ -56,7 +75,7 @@ def main(args):
                 pass
             summary+=temp
             summary=summary.replace("\n"," ")
-
+        pclass=""
     print(summary.encode('utf-8'))
 if __name__ == "__main__":
     main(sys.argv[1:])
