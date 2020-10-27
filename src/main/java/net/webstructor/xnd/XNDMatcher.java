@@ -78,10 +78,10 @@ public class XNDMatcher extends Matcher{
 		xndArxiv = new XNDArxivPlugin(body);
 	}
 
-  	public String runScript(String url) {
+  	public String runScript(String script,String url) {
 		Process process;
 		try {
-			process = Runtime.getRuntime().exec(new String[]{"python2", "python/opengraph_python.py", url});
+			process = Runtime.getRuntime().exec(new String[]{"python2", script, url});
 			InputStream stdout = process.getInputStream();
 			process.waitFor();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stdout,StandardCharsets.UTF_8));
@@ -139,40 +139,65 @@ public class XNDMatcher extends Matcher{
 		return resp_txt.toString();
 	}
 
-	public String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException {
+    public  String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException {
 		BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
-		String ex_t = ArticleExtractor.INSTANCE.getText(html);
-		long st_time = System.nanoTime();
+                String st=runScript("python/htmltotxt.py",url);
+                String ex_t =ArticleExtractor.INSTANCE.getText(st);
+                long st_time = System.nanoTime();
 		long duration = System.nanoTime() - st_time;
 		st_time = System.nanoTime();
 		String summary = "";
         	List<String> ordered = new ArrayList<String>();
         	List<String> original=TextRankSummary.spiltSentence(ex_t);                
         	List<String> unordered=TextRankSummary.getTopSentenceList(ex_t, 10);
-        	if(unordered.size()<3){
+        	List<String> unique=new ArrayList<String>();
+                int temp=0;
+                if(unordered.size()<3){
 				return summary;
 			}
-			for (String s : original){
-            		for (String s1 : unordered){
-                		if (s1.equals(s)){
-                    			ordered.add(s1);
-                		}
-            		}
+
+                for(String s: unordered){
+                    temp=0;
+                    for(String s1: unique){
+                        if(s.equals(s1)){
+                            temp=1;
+                        }
+                    }
+                    if(temp==0){
+                        unique.add(s);
+                    }
+                }
+                
+                for (String s : original){
+                    for (String s1 : unique){
+                        temp=0;
+                        if (s1.equals(s)){
+                            for(String s2: ordered){
+                                if(s1.equals(s2)){
+                                    temp=1;
+                                    break;
+                                }
+                            }
+                            if(temp==0){
+                                ordered.add(s1);
+                            }                            
+                	}
+                    }
         	}
-        	if (ex_t.length() > 2000)
+                
+        	if (ex_t.length() > 300){
 			for (String s : ordered){
 				summary += s+" ";
-
         		}
 		
 			if(summary.length()<300){
 				summary="";
 				return summary;
 			}
+			}
 		duration = System.nanoTime() - st_time;
 		return summary;
 	}
-
 
 	@Override
 	//match one Pattern for one Thing for one Site
@@ -233,7 +258,7 @@ public class XNDMatcher extends Matcher{
 			//get image from Opengraph, use previous Aigents fetch if it doesn't return result
 			if (imager != null) {
 				body.debug("URL PATH: " + path);				
-				String image = runScript(path);
+				String image = runScript("python/opengraph_python.py",path);
 				if (image != null && image.startsWith("http"))
 					body.debug("Image from OpenGraph: " + image);
 				else {
