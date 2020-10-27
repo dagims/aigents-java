@@ -81,7 +81,12 @@ public class XNDMatcher extends Matcher{
   	public String runScript(String script,String url) {
 		Process process;
 		try {
-			process = Runtime.getRuntime().exec(new String[]{"python2", script, url});
+			if(script=="python/opengraph_python.py"){
+				process = Runtime.getRuntime().exec(new String[]{"python2", script, url});
+			}
+			else{
+				process = Runtime.getRuntime().exec(new String[]{"python3", script, url});
+			}
 			InputStream stdout = process.getInputStream();
 			process.waitFor();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stdout,StandardCharsets.UTF_8));

@@ -76,7 +76,7 @@ def main(args):
             summary+=temp
             summary=summary.replace("\n"," ")
         pclass=""
-    print(summary.encode('utf-8'))
+    print(summary)
 if __name__ == "__main__":
     main(sys.argv[1:])
 
