@@ -78,15 +78,10 @@ public class XNDMatcher extends Matcher{
 		xndArxiv = new XNDArxivPlugin(body);
 	}
 
-  	public String runScript(String script,String url) {
+  	public String runScript(String PythonVersion,String script,String url) {
 		Process process;
 		try {
-			if(script=="python/opengraph_python.py"){
-				process = Runtime.getRuntime().exec(new String[]{"python2", script, url});
-			}
-			else{
-				process = Runtime.getRuntime().exec(new String[]{"python3", script, url});
-			}
+			process = Runtime.getRuntime().exec(new String[]{PythonVersion, script, url});
 			InputStream stdout = process.getInputStream();
 			process.waitFor();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stdout,StandardCharsets.UTF_8));
@@ -146,7 +141,7 @@ public class XNDMatcher extends Matcher{
 
     public  String summarize_article(String url, String html) throws MalformedURLException, BoilerpipeProcessingException {
 		BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
-                String st=runScript("python/htmltotxt.py",url);
+                String st=runScript("python3","python/htmltotxt.py",url);
                 String ex_t =ArticleExtractor.INSTANCE.getText(st);
                 long st_time = System.nanoTime();
 		long duration = System.nanoTime() - st_time;
@@ -263,7 +258,7 @@ public class XNDMatcher extends Matcher{
 			//get image from Opengraph, use previous Aigents fetch if it doesn't return result
 			if (imager != null) {
 				body.debug("URL PATH: " + path);				
-				String image = runScript("python/opengraph_python.py",path);
+				String image = runScript("python2","python/opengraph_python.py",path);
 				if (image != null && image.startsWith("http"))
 					body.debug("Image from OpenGraph: " + image);
 				else {
