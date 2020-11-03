@@ -12,6 +12,7 @@ def main(args):
     req = requests.get(args.url,headers=headers)
     soup = BeautifulSoup(req.text, "html.parser")
     summary=""		
+    
     rm=[]
     class_names=["header", "footer", "nav", "side", "aside", "menu", "layout","caption","figure"]
     classes=[]    
@@ -45,15 +46,15 @@ def main(args):
 
     body=soup.body.text
     for class_name in class_names:
+        temp=soup.find_all(class_=re.compile(class_name))
         all_classes=soup.find_all(class_=re.compile(class_name))
         for item in all_classes:
             body=soup.body.text
             cont=str(item.text)
             ext=body.replace(cont,"")            
             if len(ext)<300:
-                all_classes.remove(item)
-
-        classes+=all_classes
+                temp.remove(item)
+        classes+=temp
     for cont in classes:
         rm+=cont.find_all("p")
     pclass=""
